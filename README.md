@@ -1,0 +1,180 @@
+# Mes Comptes — suivi de comptes personnels
+
+Application mobile de suivi des comptes personnels, dans l'esprit de **Linxo** et **Bankin'** —
+mais sans agrégation bancaire : **le classeur `OperationsOfficiel.xlsm` tient lieu de base de
+données**.
+
+En ligne : `https://bwahab-wb.github.io/finances/`
+
+---
+
+## Ce qui a été repris des deux applications
+
+| Source | Élément repris |
+|---|---|
+| **Bankin'** | Accueil « Comptes » listant tous les comptes avec le patrimoine consolidé en tête · budget en **jauges colorées** par catégorie avec « reste à dépenser » et alerte visuelle de dépassement · catégorisation avec **icône + couleur** par poste · répartition simplifiée en familles *Essentiel / Plaisir / Épargne / Extra* |
+| **Linxo** | Accueil dense qui donne tout d'un coup d'œil · **prévisionnel à 30 jours** avec indicateur météo ☀️/🌧️ · graphiques d'évolution et répartition dès la page d'accueil · groupement et nommage des comptes |
+| **Les deux** | Barre d'onglets basse à 5 entrées · liste d'opérations groupée par jour avec sous-total · recherche et filtres en pastilles · feuille modale de détail |
+
+Ce qui **n'a pas** été repris : la connexion aux banques, le compte utilisateur, le cashback,
+les offres partenaires. Il n'y a ni serveur, ni identifiant, ni réseau.
+
+---
+
+## Les cinq écrans
+
+1. **Comptes** — patrimoine consolidé, prévisionnel 30 jours, cartes de comptes avec
+   sparkline, solde net et taux d'épargne du mois, top des postes, dernières opérations.
+2. **Opérations** — recherche plein texte, filtres période / compte / catégorie,
+   liste groupée par jour avec sous-total quotidien, détail en feuille modale.
+3. **Budget** — sélecteur de mois, reste à dépenser global, une jauge par catégorie
+   (vert → jaune → orange → rouge selon le taux de consommation), graphique d'écart au budget.
+4. **Analyse** — répartition en donut, revenus vs dépenses par mois, solde cumulé,
+   postes de dépense classés, familles, comparaison à N-1.
+5. **Réglages** — import du classeur, inventaire des feuilles lues, règles de lecture,
+   nommage des comptes et soldes d'ouverture, thème, effacement des données.
+
+---
+
+## Le classeur attendu
+
+La détection est tolérante : les en-têtes sont reconnus **sans tenir compte des accents,
+de la casse ni de la ponctuation**, et la ligne d'en-tête est cherchée dans les 40 premières
+lignes de chaque feuille (un titre au-dessus du tableau ne gêne pas).
+
+### Feuille d'opérations — le `TabOpérations` du classeur
+
+| Colonne | Synonymes acceptés | Obligatoire |
+|---|---|---|
+| `Date` | Date opération, Date valeur, Date comptable, Jour | **oui** |
+| `Montant` | Somme, Valeur, Amount | **oui**, sauf si Débit/Crédit |
+| `Débit` / `Crédit` | Dépense/Sortie, Recette/Entrée | alternative au montant signé |
+| `Libellé` | Description, Intitulé, Nature, Objet | non |
+| `Catégorie` | Cat, Poste, Rubrique | non |
+| `BK` | Compte, Banque, Cpte | non |
+| `Type` | Moyen de paiement, Mode | non |
+
+Le montant est **signé** : négatif = sortie d'argent. Formats acceptés : `-1 234,56`,
+`1.234,56`, `1,234.56`, `(120,00)`, `45,00 €`.
+
+Toutes les feuilles reconnues comme feuilles d'opérations sont **fusionnées** — utile pour
+la reprise d'historique HB/SG remontée à septembre 2021.
+
+### Feuille de budget — le `Budget2025Nov`
+
+| Colonne | Synonymes acceptés |
+|---|---|
+| `Catégorie` | Cat, Poste, Rubrique |
+| `Montant Prévu` | Prévu, Budget, Prévisionnel, Planned |
+
+Montant **négatif pour une dépense**. Les lignes positives (ex. `Salaire +1 600`) sont
+ignorées côté budget de dépense — c'est ce qui évite le dépassement fictif. Si plusieurs
+feuilles de budget existent, la plus fournie est retenue.
+
+---
+
+## Les arbitrages de lecture
+
+Deux règles reprises du rapport Power BI « Finances personnelles », activées par défaut et
+débrayables dans les réglages :
+
+- **Virements internes exclus.** De l'argent déplacé entre tes propres comptes, pas une
+  dépense. Sans ce filtre, c'est le premier poste du classement et il écrase les vrais.
+- **Épargne exclue des dépenses.** Une épargne sort du compte courant mais reste ton argent :
+  l'exclure rend le taux d'épargne juste et fait du solde net « ce qui reste réellement
+  disponible ». L'arbitrage inverse est défendable, d'où l'interrupteur.
+
+Ces règles s'appliquent aux **analyses et au budget**, jamais aux **soldes** : un virement
+déplace bien de l'argent, il compte toujours dans le solde de chaque compte et dans le solde
+cumulé.
+
+Les mesures reprennent celles du modèle Power BI (revenus, dépenses en positif, solde net,
+taux d'épargne, solde cumulé, dépenses N-1, évolution %, budget, écart, % consommé).
+
+### Soldes d'ouverture
+
+Le classeur ne contient pas de solde de départ. Tant qu'aucun solde d'ouverture n'est saisi,
+l'écran d'accueil affiche « **Solde reconstitué** » — le cumul des opérations, pas le solde
+réel. Saisis les soldes de départ dans les réglages pour obtenir le vrai patrimoine.
+
+### Prévisionnel
+
+Seules les opérations **récurrentes détectées** sont projetées : même libellé normalisé,
+montant stable (écart-type < 20 % de la moyenne), présent sur au moins 3 mois distincts,
+rejouées à leur jour habituel. Les dépenses ponctuelles ne sont pas extrapolées — un
+prévisionnel prudent vaut mieux qu'une projection inventée.
+
+---
+
+## Confidentialité
+
+Le fichier est lu **par le navigateur, sur l'appareil**, via SheetJS. Les données normalisées
+sont conservées en **IndexedDB** locale. Aucune requête réseau ne transporte de donnée
+financière, il n'y a ni compte ni serveur. Le classeur d'origine n'est **jamais modifié** :
+l'application ne fait que le lire. Pour corriger une ligne, on la corrige dans Excel et on
+réimporte.
+
+---
+
+## Installer sur le téléphone
+
+C'est une PWA : elle s'installe sur l'écran d'accueil et fonctionne ensuite hors ligne.
+
+- **iOS / Safari** — ouvrir l'URL, *Partager* → *Sur l'écran d'accueil*.
+- **Android / Chrome** — ouvrir l'URL, menu ⋮ → *Installer l'application*.
+
+Le service worker met en cache la coquille applicative uniquement ; les données restent en
+IndexedDB.
+
+---
+
+## Structure
+
+```
+.
+├── index.html                 coquille : barre de titre, vue, onglets, feuille modale
+├── assets/
+│   ├── app.css                design system (tokens, composants, thème clair/sombre)
+│   ├── data.js                lecture Excel, normalisation, mesures, règles, IndexedDB
+│   ├── charts.js              graphiques SVG + formatage FR
+│   ├── views.js               les cinq écrans
+│   └── app.js                 état, navigation, événements, import, persistance
+├── vendor/xlsx.mini.min.js    SheetJS 0.18.5 (Apache-2.0), embarqué pour le hors-ligne
+├── icons/                     icônes PWA
+├── manifest.webmanifest
+├── sw.js                      cache de la coquille
+└── .gitignore                 bloque *.xlsm / *.xlsx / *.csv — aucun classeur ne doit
+                               atterrir dans ce dépôt public
+```
+
+Aucun build, aucune dépendance à installer : ce sont des fichiers statiques.
+
+### Lancer en local
+
+Le service worker et le chargement des scripts exigent HTTP : ouvrir `index.html` en
+`file://` ne fonctionne pas. N'importe quel serveur statique convient.
+
+```bash
+python3 -m http.server 8000
+# puis http://localhost:8000
+```
+
+Tous les chemins sont relatifs : l'application fonctionne à la racine d'un domaine comme
+dans un sous-dossier, sans reconfiguration.
+
+### Palette
+
+La palette catégorielle est validée pour le daltonisme sur les deux surfaces de l'application
+(`#ffffff` clair, `#181b21` sombre) : bande de clarté, plancher de chroma, séparation CVD
+(ΔE 9,1 clair / 8,4 sombre) et vision normale (19,6 / 19,3) — tous les seuils sont franchis.
+Trois teintes claires passent sous 3:1 en mode clair : chaque graphique catégoriel est donc
+doublé d'une **légende et d'une vue tableau**, l'identité ne repose jamais sur la couleur
+seule. Au-delà de huit catégories, les suivantes sont regroupées dans « Autres » plutôt que
+de recevoir une teinte générée.
+
+---
+
+## Crédits
+
+Lecture des classeurs : [SheetJS](https://sheetjs.com/) 0.18.5, licence Apache-2.0
+(voir `vendor/LICENSE-sheetjs.txt`). Tout le reste est écrit à la main, sans framework.

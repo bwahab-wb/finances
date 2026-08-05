@@ -1,0 +1,25 @@
+# Garde-fou : aucun classeur ne doit finir dans un dépôt public.
+# L'application lit le fichier dans le navigateur, il n'a rien à faire ici.
+*.xlsm
+*.xlsx
+*.xls
+*.xlsb
+*.csv
+*.tsv
+*.ods
+*.pbix
+*.pbip
+
+# Sauvegardes et fichiers temporaires Excel
+~$*
+*.bak
+
+# Systèmes
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Outillage éventuel
+node_modules/
+.vscode/
+.idea/

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Mes Comptes">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a78d6"/>
+      <stop offset="1" stop-color="#1c5cab"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="115" fill="url(#g)"/>
+  <g fill="#fff">
+    <path d="M112 308a20 20 0 0 1 20-20h18a20 20 0 0 1 20 20v92h-58z"/>
+    <path d="M227 232a20 20 0 0 1 20-20h18a20 20 0 0 1 20 20v168h-58z"/>
+    <path d="M342 132a20 20 0 0 1 20-20h18a20 20 0 0 1 20 20v268h-58z"/>
+  </g>
+</svg>

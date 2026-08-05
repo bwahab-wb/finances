@@ -1,0 +1,24 @@
+{
+  "name": "Mes Comptes",
+  "short_name": "Comptes",
+  "description": "Suivi des comptes personnels sur mobile, alimenté par un classeur Excel. Aucune connexion bancaire.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f5f7",
+  "theme_color": "#f4f5f7",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Opérations", "url": "./#operations" },
+    { "name": "Budget", "url": "./#budget" }
+  ]
+}
