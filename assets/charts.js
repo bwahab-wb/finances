@@ -168,7 +168,7 @@ const Charts = (() => {
     const rMid = (rOut + rIn) / 2;
 
     if (!total) {
-      svg.appendChild(el("circle", { cx, cy, r: rMid, fill: "none", stroke: cssVar("--surface-3"), "stroke-width": thickness }));
+      svg.appendChild(el("circle", { cx, cy, r: rMid, fill: "none", stroke: cssVar("--chart-track"), "stroke-width": thickness }));
       container.appendChild(svg);
       return;
     }
@@ -385,7 +385,7 @@ const Charts = (() => {
       const barY = labelY + 6;
       const len = Math.max(3, (d.value / max) * plotW);
 
-      svg.appendChild(el("rect", { x: padL, y: barY, width: plotW, height: barH, rx: barH / 2, fill: cssVar("--surface-3") }));
+      svg.appendChild(el("rect", { x: padL, y: barY, width: plotW, height: barH, rx: barH / 2, fill: cssVar("--chart-track") }));
       const p = el("path", { d: barPath(barY, barH, padL, padL + len), fill: cssVar(d.slot) });
       hoverable(
         p,

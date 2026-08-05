@@ -1,12 +1,27 @@
 /* ==========================================================================
-   Mes Comptes — design system
-   Interface mobile inspirée de Linxo et Bankin', alimentée par OperationsOfficiel.xlsm
-   Palette catégorielle validée (scripts/validate_palette.js) :
-     light  surface #ffffff : lightness PASS · chroma PASS · CVD 9.1 · normal 19.6
-     dark   surface #181b21 : lightness PASS · chroma PASS · CVD 8.4 · normal 19.3
-   Trois teintes claires (aqua, jaune, magenta) passent sous 3:1 en mode clair :
-   la règle de relief s'applique — chaque graphique catégoriel est doublé d'une
-   liste lisible (libellé + montant), jamais de couleur seule.
+   Mes Comptes — design system « Liquid Glass »
+
+   Le principe : un fond coloré vivant (aurore) et, au-dessus, des surfaces de
+   verre translucides qui laissent transparaître ce fond, captent la lumière sur
+   leurs bords et flottent au lieu d'être posées. Sans quelque chose derrière,
+   du verre ne montre rien — l'aurore n'est pas une décoration, c'est ce que le
+   matériau réfracte.
+
+   Palette catégorielle revalidée sur les surfaces RÉELLEMENT COMPOSÉES
+   (aurore la plus saturée + verre), et non sur un fond opaque théorique :
+     clair  #ecedfc : clarté PASS · chroma PASS · CVD 9,1 · vision normale 19,6
+     sombre #1e2e4b : clarté PASS · chroma PASS · CVD 8,4 · vision normale 19,3
+   Le verre coûte du contraste : quatre teintes passent sous 3:1 en clair, une en
+   sombre. La règle de relief s'applique donc — chaque graphique catégoriel porte
+   une légende ET une vue tableau, l'identité ne tient jamais à la couleur seule.
+   Les encres ont été recalculées pour tenir 4,5:1 sur ces mêmes surfaces
+   (ink-3 passe de #7d8697 à #656d7a en clair, à #8891a0 en sombre).
+
+   Performance : le flou d'arrière-plan (backdrop-filter) est réservé aux
+   éléments FLOTTANTS qui recouvrent du contenu en mouvement — barre de titre,
+   barre d'onglets, feuille modale, pastilles de filtre. Les cartes qui défilent
+   s'en passent : l'aurore derrière elles est une dégradé lisse, la flouter ne
+   change rien à l'œil et coûterait une couche de composition par carte.
    ========================================================================== */
 
 /* ---------- 1. Tokens ---------- */
@@ -14,27 +29,46 @@
 :root {
   color-scheme: light;
 
-  /* Surfaces */
-  --plane: #f4f5f7;
-  --surface: #ffffff;
-  --surface-2: #f6f7f9;
-  --surface-3: #eef0f4;
-  --scrim: rgba(13, 17, 23, 0.45);
+  /* Plan de fond et aurore */
+  --plane: #eaeef8;
+  --aurora-1: rgba(99, 102, 241, 0.3);
+  --aurora-2: rgba(14, 165, 233, 0.26);
+  --aurora-3: rgba(45, 212, 191, 0.22);
+  --aurora-4: rgba(168, 85, 247, 0.18);
 
-  /* Encre */
+  /* Verre : fond, bords spéculaires, ombre portée */
+  --glass: rgba(255, 255, 255, 0.74);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --glass-bar: rgba(234, 238, 248, 0.76);
+  --glass-nav: rgba(255, 255, 255, 0.86);
+  --glass-inset: rgba(255, 255, 255, 0.62);
+  --rim-hi: rgba(255, 255, 255, 0.95);
+  --rim-lo: rgba(255, 255, 255, 0.1);
+  --rim-edge: rgba(13, 17, 23, 0.06);
+  --shadow-1: 0 1px 2px rgba(20, 26, 48, 0.05), 0 4px 14px rgba(20, 26, 48, 0.06);
+  --shadow-2: 0 8px 32px rgba(20, 26, 48, 0.14), 0 2px 8px rgba(20, 26, 48, 0.08);
+  --shadow-float: 0 12px 40px rgba(20, 26, 48, 0.18), 0 2px 10px rgba(20, 26, 48, 0.1);
+  --scrim: rgba(18, 22, 40, 0.4);
+
+  /* Surface opaque équivalente — ce que les graphiques utilisent pour leurs
+     séparateurs : un « vide » translucide laisserait voir le fond au travers. */
+  --chart-surface: #ecedfc;
+  --chart-track: rgba(13, 17, 23, 0.09);
+
+  /* Encre — ink-3 porte des libellés de 11 px, il doit tenir 4,5:1 sur le verre */
   --ink: #0d1117;
-  --ink-2: #545c6b;
-  --ink-3: #8b93a1;
+  --ink-2: #4c5462;
+  --ink-3: #656d7a;
 
   /* Chrome */
-  --hairline: rgba(13, 17, 23, 0.09);
-  --grid: #e7e9ee;
-  --baseline: #c9ced8;
+  --hairline: rgba(13, 17, 23, 0.08);
+  --grid: rgba(13, 17, 23, 0.09);
+  --baseline: rgba(13, 17, 23, 0.24);
 
-  /* Accent applicatif */
+  /* Accent */
   --accent: #2a78d6;
   --accent-ink: #1c5cab;
-  --accent-wash: #eaf2fd;
+  --accent-wash: rgba(42, 120, 214, 0.12);
 
   /* Sens financier : seul le crédit est coloré, une dépense reste en encre neutre */
   --pos: #006300;
@@ -55,46 +89,63 @@
   --s6: #008300;
   --s7: #4a3aa7;
   --s8: #e34948;
-  --s-rest: #8b93a1;
+  --s-rest: #656d7a;
 
-  /* Ombres */
-  --shadow-1: 0 1px 2px rgba(13, 17, 23, 0.05), 0 1px 1px rgba(13, 17, 23, 0.03);
-  --shadow-2: 0 4px 16px rgba(13, 17, 23, 0.09);
-  --shadow-nav: 0 -1px 0 var(--hairline);
-
-  /* Rythme */
-  --r-sm: 10px;
-  --r-md: 14px;
-  --r-lg: 20px;
+  /* Rayons concentriques : un enfant reprend le rayon du parent moins sa marge */
+  --r-xs: 10px;
+  --r-sm: 14px;
+  --r-md: 20px;
+  --r-lg: 26px;
+  --r-xl: 32px;
   --r-full: 999px;
+
   --gut: 16px;
-  --tab-h: 60px;
+  --tab-h: 64px;
+  --blur: 24px;
 
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --plane: #0f1115;
-    --surface: #181b21;
-    --surface-2: #1f232b;
-    --surface-3: #262b34;
+
+    --plane: #070910;
+    --aurora-1: rgba(59, 130, 246, 0.52);
+    --aurora-2: rgba(139, 92, 246, 0.44);
+    --aurora-3: rgba(20, 184, 166, 0.34);
+    --aurora-4: rgba(236, 72, 153, 0.22);
+
+    --glass: rgba(28, 32, 41, 0.64);
+    --glass-strong: rgba(30, 35, 45, 0.76);
+    --glass-bar: rgba(8, 10, 15, 0.76);
+    --glass-nav: rgba(24, 28, 36, 0.88);
+    --glass-inset: rgba(255, 255, 255, 0.05);
+    --rim-hi: rgba(255, 255, 255, 0.3);
+    --rim-lo: rgba(255, 255, 255, 0.03);
+    --rim-edge: rgba(255, 255, 255, 0.07);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.32);
+    --shadow-2: 0 8px 32px rgba(0, 0, 0, 0.55);
+    --shadow-float: 0 12px 44px rgba(0, 0, 0, 0.62);
     --scrim: rgba(0, 0, 0, 0.6);
 
+    --chart-surface: #1e2e4b;
+    --chart-track: rgba(255, 255, 255, 0.12);
+
     --ink: #ffffff;
-    --ink-2: #a8b0bd;
-    --ink-3: #7b8492;
+    --ink-2: #aeb6c4;
+    --ink-3: #8891a0;
 
-    --hairline: rgba(255, 255, 255, 0.1);
-    --grid: #262b34;
-    --baseline: #363c47;
+    --hairline: rgba(255, 255, 255, 0.09);
+    --grid: rgba(255, 255, 255, 0.1);
+    --baseline: rgba(255, 255, 255, 0.3);
 
-    --accent: #3987e5;
-    --accent-ink: #86b6ef;
-    --accent-wash: #17263b;
+    --accent: #4f97ec;
+    --accent-ink: #8fbcf2;
+    --accent-wash: rgba(79, 151, 236, 0.16);
 
-    --pos: #0ca30c;
+    --pos: #2fbb2f;
     --neg: #e66767;
 
     --s1: #3987e5;
@@ -105,34 +156,48 @@
     --s6: #008300;
     --s7: #9085e9;
     --s8: #e66767;
-    --s-rest: #7b8492;
-
-    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --s-rest: #8891a0;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --plane: #0f1115;
-  --surface: #181b21;
-  --surface-2: #1f232b;
-  --surface-3: #262b34;
+
+  --plane: #070910;
+  --aurora-1: rgba(59, 130, 246, 0.52);
+  --aurora-2: rgba(139, 92, 246, 0.44);
+  --aurora-3: rgba(20, 184, 166, 0.34);
+  --aurora-4: rgba(236, 72, 153, 0.22);
+
+  --glass: rgba(28, 32, 41, 0.64);
+  --glass-strong: rgba(30, 35, 45, 0.76);
+  --glass-bar: rgba(8, 10, 15, 0.76);
+  --glass-nav: rgba(24, 28, 36, 0.88);
+  --glass-inset: rgba(255, 255, 255, 0.05);
+  --rim-hi: rgba(255, 255, 255, 0.3);
+  --rim-lo: rgba(255, 255, 255, 0.03);
+  --rim-edge: rgba(255, 255, 255, 0.07);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.32);
+  --shadow-2: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --shadow-float: 0 12px 44px rgba(0, 0, 0, 0.62);
   --scrim: rgba(0, 0, 0, 0.6);
 
+  --chart-surface: #1e2e4b;
+  --chart-track: rgba(255, 255, 255, 0.12);
+
   --ink: #ffffff;
-  --ink-2: #a8b0bd;
-  --ink-3: #7b8492;
+  --ink-2: #aeb6c4;
+  --ink-3: #8891a0;
 
-  --hairline: rgba(255, 255, 255, 0.1);
-  --grid: #262b34;
-  --baseline: #363c47;
+  --hairline: rgba(255, 255, 255, 0.09);
+  --grid: rgba(255, 255, 255, 0.1);
+  --baseline: rgba(255, 255, 255, 0.3);
 
-  --accent: #3987e5;
-  --accent-ink: #86b6ef;
-  --accent-wash: #17263b;
+  --accent: #4f97ec;
+  --accent-ink: #8fbcf2;
+  --accent-wash: rgba(79, 151, 236, 0.16);
 
-  --pos: #0ca30c;
+  --pos: #2fbb2f;
   --neg: #e66767;
 
   --s1: #3987e5;
@@ -143,10 +208,7 @@
   --s6: #008300;
   --s7: #9085e9;
   --s8: #e66767;
-  --s-rest: #7b8492;
-
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --s-rest: #8891a0;
 }
 
 /* ---------- 2. Base ---------- */
@@ -159,17 +221,22 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  background: var(--plane);
 }
 
+/* Pas de `background` ici : un descendant en z-index négatif (#bg) se peint
+   AVANT les boîtes en flux, donc sous le fond du body. Le plan de couleur est
+   porté par <html> — qui, lui, peint le canevas — et l'aurore s'affiche par
+   dessus. Avec un fond sur body, les halos restaient invisibles. */
 body {
   margin: 0;
   font-family: var(--font);
   font-size: 15px;
   line-height: 1.45;
   color: var(--ink);
-  background: var(--plane);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+  min-height: 100dvh;
 }
 
 button,
@@ -184,6 +251,7 @@ button {
   border: 0;
   background: none;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1,
@@ -191,13 +259,13 @@ h2,
 h3 {
   margin: 0;
   font-weight: 650;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 :focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 .sr-only {
@@ -212,46 +280,165 @@ h3 {
   border: 0;
 }
 
-/* ---------- 3. Coquille applicative ---------- */
+/* ---------- 3. L'aurore : ce que le verre réfracte ---------- */
+
+#bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--plane);
+  pointer-events: none;
+}
+
+/* Tout est en vmax, jamais en vw : sur un écran de téléphone (390 × 844), des
+   halos dimensionnés en vw se réduisent à de petits disques tassés dans les
+   coins et laissent le centre nu — le verre n'a alors plus rien à réfracter. */
+#bg i {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(70px);
+  will-change: transform;
+}
+
+#bg i:nth-child(1) {
+  width: 95vmax;
+  height: 95vmax;
+  top: -30vmax;
+  left: -35vmax;
+  background: var(--aurora-1);
+  animation: drift-a 36s var(--ease) infinite alternate;
+}
+
+#bg i:nth-child(2) {
+  width: 80vmax;
+  height: 80vmax;
+  top: 10vmax;
+  right: -40vmax;
+  background: var(--aurora-2);
+  animation: drift-b 44s var(--ease) infinite alternate;
+}
+
+#bg i:nth-child(3) {
+  width: 85vmax;
+  height: 85vmax;
+  bottom: -25vmax;
+  left: -30vmax;
+  background: var(--aurora-3);
+  animation: drift-c 51s var(--ease) infinite alternate;
+}
+
+#bg i:nth-child(4) {
+  width: 70vmax;
+  height: 70vmax;
+  bottom: 15vmax;
+  right: -25vmax;
+  background: var(--aurora-4);
+  animation: drift-a 58s var(--ease) infinite alternate-reverse;
+}
+
+@keyframes drift-a {
+  to {
+    transform: translate3d(16vmax, 14vmax, 0) scale(1.15);
+  }
+}
+@keyframes drift-b {
+  to {
+    transform: translate3d(-18vmax, 18vmax, 0) scale(0.86);
+  }
+}
+@keyframes drift-c {
+  to {
+    transform: translate3d(20vmax, -16vmax, 0) scale(1.2);
+  }
+}
+
+/* ---------- 4. Le matériau verre ---------- */
+
+/* Bord spéculaire : un filet clair en haut à gauche qui s'éteint en bas à
+   droite, comme une arête de verre qui accroche la lumière. Dessiné en masque
+   pour rester net quel que soit le rayon, sans ajouter d'encre au centre. */
+.glass,
+.card,
+.stat,
+.search,
+.stepper,
+.segmented,
+.chip,
+.icon-btn,
+.banner,
+.file-drop,
+.hero,
+.tabbar,
+.sheet {
+  position: relative;
+  isolation: isolate;
+}
+
+.glass::before,
+.card::before,
+.stat::before,
+.search::before,
+.stepper::before,
+.segmented::before,
+.chip::before,
+.icon-btn::before,
+.banner::before,
+.file-drop::before,
+.hero::before,
+.tabbar::before,
+.sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(145deg, var(--rim-hi) 0%, var(--rim-lo) 38%, transparent 58%, var(--rim-hi) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ---------- 5. Coquille applicative ---------- */
 
 #app {
   max-width: 560px;
   margin: 0 auto;
   min-height: 100dvh;
-  background: var(--plane);
   position: relative;
-  padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 12px);
-}
-
-@media (min-width: 600px) {
-  body {
-    background: var(--surface-3);
-  }
-  #app {
-    box-shadow: 0 0 0 1px var(--hairline);
-  }
+  padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 34px);
 }
 
 .topbar {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: var(--plane);
-  padding: calc(env(safe-area-inset-top, 0px) + 12px) var(--gut) 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) var(--gut) 12px;
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: box-shadow 0.15s;
+  background: transparent;
+  transition: background 0.25s var(--ease), box-shadow 0.25s var(--ease);
 }
 
+/* La barre de titre ne devient du verre que lorsqu'elle a du contenu à
+   recouvrir — au repos elle disparaît dans l'aurore. */
 .topbar.is-stuck {
-  box-shadow: 0 1px 0 var(--hairline);
+  background: var(--glass-bar);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+  box-shadow: 0 1px 0 var(--rim-edge);
 }
 
 .topbar h1 {
-  font-size: 22px;
+  font-size: 24px;
   flex: 1;
   min-width: 0;
+  letter-spacing: -0.025em;
 }
 
 .topbar .sub {
@@ -263,19 +450,23 @@ h3 {
 }
 
 .icon-btn {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--r-full);
   display: grid;
   place-items: center;
   color: var(--ink-2);
-  background: var(--surface);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+  backdrop-filter: blur(var(--blur)) saturate(180%);
   box-shadow: var(--shadow-1);
   flex: none;
+  transition: transform 0.22s var(--ease), background 0.2s;
 }
 
 .icon-btn:active {
-  transform: scale(0.94);
+  transform: scale(0.9);
+  background: var(--glass-strong);
 }
 
 .icon-btn svg {
@@ -286,46 +477,46 @@ h3 {
 .screen {
   padding: 0 var(--gut) 8px;
   display: none;
-  animation: fade 0.18s ease-out;
 }
 
 .screen.is-active {
   display: block;
+  animation: rise 0.32s var(--ease);
 }
 
-@keyframes fade {
+@keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(10px) scale(0.99);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .screen,
-  .icon-btn:active {
-    animation: none;
-    transform: none;
-  }
-}
-
-/* ---------- 4. Barre d'onglets ---------- */
+/* ---------- 6. Barre d'onglets flottante ---------- */
 
 .tabbar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  left: 12px;
+  right: 12px;
   z-index: 40;
-  height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  max-width: 560px;
+  max-width: 536px;
   margin: 0 auto;
+  height: var(--tab-h);
+  border-radius: var(--r-full);
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  backdrop-filter: saturate(180%) blur(18px);
-  -webkit-backdrop-filter: saturate(180%) blur(18px);
-  box-shadow: var(--shadow-nav);
+  background: var(--glass-nav);
+  -webkit-backdrop-filter: blur(34px) saturate(200%);
+  backdrop-filter: blur(34px) saturate(200%);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
+}
+
+/* La feuille du navigateur perd toujours face à une règle d'auteur : sans ceci,
+   `display: grid` annulerait l'attribut hidden et la barre resterait visible
+   sur l'écran d'accueil, avant tout import. */
+.tabbar[hidden] {
+  display: none;
 }
 
 .tabbar button {
@@ -335,29 +526,58 @@ h3 {
   justify-content: center;
   gap: 3px;
   color: var(--ink-3);
-  font-size: 10.5px;
-  font-weight: 550;
+  font-size: 10px;
+  font-weight: 560;
   letter-spacing: 0.01em;
-  transition: color 0.12s;
+  position: relative;
+  transition: color 0.2s var(--ease);
+  z-index: 1;
 }
 
-.tabbar button svg {
-  width: 23px;
-  height: 23px;
+/* Pastille de verre sous l'onglet actif : elle grandit à la sélection */
+.tabbar button::after {
+  content: "";
+  position: absolute;
+  inset: 6px 6px;
+  border-radius: var(--r-full);
+  background: var(--accent-wash);
+  transform: scale(0.6);
+  opacity: 0;
+  transition: transform 0.34s var(--ease), opacity 0.24s var(--ease);
+  z-index: -1;
 }
 
 .tabbar button[aria-selected="true"] {
   color: var(--accent);
 }
 
-/* ---------- 5. Cartes & listes ---------- */
+.tabbar button[aria-selected="true"]::after {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.tabbar button svg {
+  width: 22px;
+  height: 22px;
+  transition: transform 0.3s var(--ease);
+}
+
+.tabbar button[aria-selected="true"] svg {
+  transform: translateY(-1px) scale(1.06);
+}
+
+.tabbar button:active svg {
+  transform: scale(0.88);
+}
+
+/* ---------- 7. Cartes de verre ---------- */
 
 .card {
-  background: var(--surface);
+  background: var(--glass);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-1);
-  padding: 16px;
-  margin-bottom: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
 }
 
 .card.flush {
@@ -374,110 +594,126 @@ h3 {
 }
 
 .card-head h2 {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 15.5px;
+  font-weight: 620;
 }
 
 .card-head .hint {
   font-size: 12px;
   color: var(--ink-3);
   font-weight: 500;
+  text-align: right;
 }
 
 .section-title {
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 11.5px;
+  font-weight: 680;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   color: var(--ink-3);
-  margin: 20px 2px 8px;
+  margin: 22px 4px 9px;
 }
 
-/* Hero — le patrimoine consolidé, un seul par écran */
+/* Le héros — un seul grand chiffre par écran */
 .hero {
-  background: linear-gradient(150deg, var(--accent) 0%, var(--accent-ink) 100%);
+  background: linear-gradient(145deg, #3d8ae8 0%, var(--accent) 45%, #1a4f96 100%);
   color: #fff;
-  border-radius: var(--r-lg);
-  padding: 20px;
-  margin-bottom: 12px;
+  border-radius: var(--r-xl);
+  padding: 22px;
+  margin-bottom: 14px;
   box-shadow: var(--shadow-2);
-  position: relative;
   overflow: hidden;
 }
 
+/* Reflets : une lentille claire en haut à droite, un halo diffus en bas */
 .hero::after {
   content: "";
   position: absolute;
-  right: -60px;
-  top: -70px;
-  width: 190px;
-  height: 190px;
+  right: -70px;
+  top: -90px;
+  width: 210px;
+  height: 210px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.04) 70%);
+  pointer-events: none;
+}
+
+.hero > * {
+  position: relative;
+  z-index: 1;
 }
 
 .hero .label {
   font-size: 12.5px;
-  font-weight: 550;
-  opacity: 0.82;
+  font-weight: 560;
+  opacity: 0.86;
   letter-spacing: 0.01em;
 }
 
 .hero .value {
-  font-size: 40px;
+  font-size: 42px;
   font-weight: 680;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
-  margin-top: 2px;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin-top: 3px;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.12);
 }
 
 .hero .meta {
   display: flex;
-  gap: 18px;
-  margin-top: 16px;
-  position: relative;
+  gap: 10px;
+  margin-top: 18px;
 }
 
-.hero .meta div {
+.hero .meta > div {
   min-width: 0;
+  flex: 1;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: var(--r-sm);
+  padding: 9px 12px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 .hero .meta .k {
-  font-size: 11.5px;
-  opacity: 0.8;
+  font-size: 11px;
+  opacity: 0.84;
   font-weight: 500;
 }
 
 .hero .meta .v {
   font-size: 16px;
-  font-weight: 620;
-  letter-spacing: -0.01em;
+  font-weight: 640;
+  letter-spacing: -0.015em;
 }
 
-/* Rangées génériques */
+/* ---------- 8. Rangées ---------- */
+
 .row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 16px;
+  padding: 12px 16px;
   text-align: left;
   width: 100%;
   background: none;
   position: relative;
+  transition: background 0.18s var(--ease);
 }
 
 .row + .row::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 60px;
+  left: 62px;
   right: 0;
   height: 1px;
   background: var(--hairline);
 }
 
 .row:active {
-  background: var(--surface-2);
+  background: var(--glass-inset);
 }
 
 .row .body {
@@ -487,7 +723,7 @@ h3 {
 
 .row .t {
   font-size: 14.5px;
-  font-weight: 520;
+  font-weight: 530;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -504,8 +740,8 @@ h3 {
 
 .row .amt {
   font-size: 14.5px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 620;
+  letter-spacing: -0.015em;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -514,22 +750,24 @@ h3 {
   color: var(--pos);
 }
 
-/* Pastille de catégorie : couleur + glyphe, l'identité ne tient jamais à la teinte seule */
+/* Pastille de catégorie : teinte + glyphe, l'identité ne tient jamais à la couleur seule */
 .dot {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--r-full);
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
   display: grid;
   place-items: center;
   font-size: 17px;
   flex: none;
-  background: var(--c-wash, var(--surface-2));
+  background: var(--c-wash, var(--glass-inset));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 1px 3px rgba(20, 26, 48, 0.08);
   line-height: 1;
 }
 
 .dot.sm {
-  width: 26px;
-  height: 26px;
+  width: 27px;
+  height: 27px;
+  border-radius: 9px;
   font-size: 13px;
 }
 
@@ -539,6 +777,7 @@ h3 {
   border-radius: 3px;
   flex: none;
   background: var(--c, var(--s1));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 /* Cartes de compte */
@@ -546,26 +785,31 @@ h3 {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 15px 16px;
   width: 100%;
   text-align: left;
   position: relative;
+  transition: background 0.18s var(--ease);
+}
+
+.acct:active {
+  background: var(--glass-inset);
 }
 
 .acct + .acct::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 60px;
+  left: 62px;
   right: 16px;
   height: 1px;
   background: var(--hairline);
 }
 
 .acct .badge {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
   display: grid;
   place-items: center;
   font-size: 12.5px;
@@ -573,6 +817,7 @@ h3 {
   color: #fff;
   flex: none;
   letter-spacing: -0.02em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34), 0 2px 8px rgba(20, 26, 48, 0.16);
 }
 
 .acct .name,
@@ -584,7 +829,7 @@ h3 {
 
 .acct .name {
   font-size: 14.5px;
-  font-weight: 570;
+  font-weight: 580;
 }
 
 .acct .kind {
@@ -595,19 +840,19 @@ h3 {
 
 .acct .bal {
   font-size: 16px;
-  font-weight: 640;
-  letter-spacing: -0.015em;
+  font-weight: 650;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- 6. Contrôles ---------- */
+/* ---------- 9. Contrôles ---------- */
 
 .chips {
   display: flex;
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 2px 0 10px;
+  padding: 3px 0 12px;
   margin: 0 calc(var(--gut) * -1);
   padding-inline: var(--gut);
 }
@@ -618,41 +863,50 @@ h3 {
 
 .chip {
   flex: none;
-  padding: 7px 13px;
+  padding: 8px 15px;
   border-radius: var(--r-full);
-  background: var(--surface);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
   color: var(--ink-2);
   font-size: 13px;
-  font-weight: 550;
+  font-weight: 560;
   white-space: nowrap;
   box-shadow: var(--shadow-1);
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.2s var(--ease), color 0.2s, transform 0.2s var(--ease);
+}
+
+.chip:active {
+  transform: scale(0.94);
 }
 
 .chip[aria-pressed="true"] {
   background: var(--accent);
   color: #fff;
+  box-shadow: var(--shadow-2), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .segmented {
   display: flex;
-  background: var(--surface-3);
+  background: var(--glass-inset);
   border-radius: var(--r-full);
-  padding: 3px;
-  margin-bottom: 12px;
+  padding: 4px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-1);
 }
 
 .segmented button {
   flex: 1;
-  padding: 7px 4px;
+  padding: 8px 4px;
   border-radius: var(--r-full);
   font-size: 13px;
-  font-weight: 550;
+  font-weight: 560;
   color: var(--ink-2);
+  transition: background 0.24s var(--ease), color 0.2s;
 }
 
 .segmented button[aria-pressed="true"] {
-  background: var(--surface);
+  background: var(--glass-strong);
   color: var(--ink);
   box-shadow: var(--shadow-1);
 }
@@ -662,41 +916,52 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: var(--surface);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
   border-radius: var(--r-full);
-  padding: 6px 8px;
+  padding: 7px 9px;
   box-shadow: var(--shadow-1);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .stepper .lbl {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 14.5px;
+  font-weight: 620;
   text-transform: capitalize;
+  letter-spacing: -0.01em;
 }
 
 .stepper button {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--r-full);
   display: grid;
   place-items: center;
   color: var(--ink-2);
+  background: var(--glass-inset);
+  transition: transform 0.2s var(--ease), opacity 0.2s;
+}
+
+.stepper button:active {
+  transform: scale(0.88);
 }
 
 .stepper button:disabled {
-  opacity: 0.3;
+  opacity: 0.28;
 }
 
 .search {
   display: flex;
   align-items: center;
   gap: 9px;
-  background: var(--surface);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(180%);
+  backdrop-filter: blur(var(--blur)) saturate(180%);
   border-radius: var(--r-full);
-  padding: 0 14px;
+  padding: 0 16px;
   box-shadow: var(--shadow-1);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .search svg {
@@ -710,7 +975,7 @@ h3 {
   flex: 1;
   border: 0;
   background: none;
-  padding: 11px 0;
+  padding: 12px 0;
   font-size: 15px;
   min-width: 0;
 }
@@ -724,27 +989,32 @@ h3 {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 18px;
+  padding: 14px 18px;
   border-radius: var(--r-full);
-  background: var(--accent);
+  background: linear-gradient(160deg, #3d8ae8, var(--accent));
   color: #fff;
-  font-size: 14.5px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 620;
   width: 100%;
+  box-shadow: var(--shadow-2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.2s var(--ease), filter 0.2s;
 }
 
 .btn.ghost {
-  background: var(--surface-2);
+  background: var(--glass-inset);
   color: var(--ink);
+  box-shadow: var(--shadow-1), inset 0 1px 0 var(--rim-lo);
 }
 
 .btn.danger {
-  background: var(--surface-2);
+  background: var(--glass-inset);
   color: var(--st-critical);
+  box-shadow: var(--shadow-1);
 }
 
 .btn:active {
-  filter: brightness(0.94);
+  transform: scale(0.97);
+  filter: brightness(0.95);
 }
 
 .field {
@@ -752,7 +1022,7 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 13px 16px;
   position: relative;
 }
 
@@ -768,7 +1038,7 @@ h3 {
 
 .field .k {
   font-size: 14px;
-  font-weight: 520;
+  font-weight: 530;
 }
 
 .field .d {
@@ -780,10 +1050,10 @@ h3 {
 .field input[type="text"],
 .field input[type="number"],
 .field select {
-  border: 1px solid var(--hairline);
-  background: var(--surface-2);
-  border-radius: var(--r-sm);
-  padding: 7px 10px;
+  border: 1px solid var(--rim-edge);
+  background: var(--glass-inset);
+  border-radius: var(--r-xs);
+  padding: 8px 11px;
   font-size: 14px;
   max-width: 150px;
   text-align: right;
@@ -791,13 +1061,14 @@ h3 {
 
 /* Interrupteur */
 .switch {
-  width: 46px;
-  height: 28px;
+  width: 48px;
+  height: 29px;
   border-radius: var(--r-full);
-  background: var(--surface-3);
+  background: var(--glass-inset);
+  box-shadow: inset 0 1px 3px rgba(20, 26, 48, 0.14);
   position: relative;
   flex: none;
-  transition: background 0.16s;
+  transition: background 0.28s var(--ease);
 }
 
 .switch[aria-checked="true"] {
@@ -809,22 +1080,22 @@ h3 {
   position: absolute;
   top: 3px;
   left: 3px;
-  width: 22px;
-  height: 22px;
+  width: 23px;
+  height: 23px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  transition: transform 0.16s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+  transition: transform 0.28s var(--ease);
 }
 
 .switch[aria-checked="true"]::after {
-  transform: translateX(18px);
+  transform: translateX(19px);
 }
 
-/* ---------- 7. Jauges de budget (style Bankin') ---------- */
+/* ---------- 10. Jauges de budget ---------- */
 
 .gauge {
-  padding: 13px 16px;
+  padding: 14px 16px;
   position: relative;
 }
 
@@ -848,7 +1119,7 @@ h3 {
 .gauge-top .n {
   flex: 1;
   font-size: 14px;
-  font-weight: 550;
+  font-weight: 560;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -857,7 +1128,7 @@ h3 {
 
 .gauge-top .v {
   font-size: 13.5px;
-  font-weight: 600;
+  font-weight: 620;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -867,25 +1138,27 @@ h3 {
   font-weight: 500;
 }
 
-/* La piste est un pas plus clair de la teinte de remplissage : l'état se lit sur toute la barre */
+/* La piste est un pas plus clair du remplissage : l'état se lit sur toute la barre */
 .track {
-  height: 8px;
+  height: 9px;
   border-radius: var(--r-full);
-  background: var(--track, var(--surface-3));
+  background: var(--track, var(--glass-inset));
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(20, 26, 48, 0.1);
 }
 
 .track .fill {
   height: 100%;
   border-radius: var(--r-full);
   background: var(--fill, var(--st-good));
-  transition: width 0.4s cubic-bezier(0.2, 0.7, 0.3, 1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: width 0.55s var(--ease);
 }
 
 .gauge-foot {
   display: flex;
   justify-content: space-between;
-  margin-top: 6px;
+  margin-top: 7px;
   font-size: 11.5px;
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
@@ -893,10 +1166,10 @@ h3 {
 
 .gauge-foot .over {
   color: var(--st-critical);
-  font-weight: 600;
+  font-weight: 620;
 }
 
-/* ---------- 8. Graphiques ---------- */
+/* ---------- 11. Graphiques ---------- */
 
 .chart {
   width: 100%;
@@ -927,7 +1200,7 @@ h3 {
 .chart .lbl-strong {
   fill: var(--ink);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 620;
 }
 
 .chart .mark-line {
@@ -937,16 +1210,18 @@ h3 {
   stroke-linecap: round;
 }
 
+/* L'anneau des points est une couleur OPAQUE : avec du verre, un anneau
+   translucide laisserait voir la courbe au travers. */
 .chart .mark-dot {
-  stroke: var(--surface);
+  stroke: var(--chart-surface);
   stroke-width: 2;
 }
 
 .legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
-  margin-top: 12px;
+  gap: 7px 16px;
+  margin-top: 14px;
 }
 
 .legend span {
@@ -955,10 +1230,9 @@ h3 {
   gap: 6px;
   font-size: 12px;
   color: var(--ink-2);
-  font-weight: 520;
+  font-weight: 530;
 }
 
-/* Le libellé central du donut — un seul chiffre héros par vue, réservé à l'écran Comptes */
 .donut-wrap {
   position: relative;
   display: grid;
@@ -974,32 +1248,34 @@ h3 {
 .donut-center .k {
   font-size: 11.5px;
   color: var(--ink-3);
-  font-weight: 550;
+  font-weight: 560;
 }
 
 .donut-center .v {
-  font-size: 24px;
-  font-weight: 660;
-  letter-spacing: -0.02em;
+  font-size: 25px;
+  font-weight: 670;
+  letter-spacing: -0.025em;
 }
 
-/* Infobulle */
+/* Infobulle — verre sombre inversé */
 .tip {
   position: fixed;
   z-index: 60;
-  background: var(--ink);
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   color: var(--plane);
-  border-radius: var(--r-sm);
-  padding: 7px 10px;
+  border-radius: var(--r-xs);
+  padding: 8px 11px;
   font-size: 12px;
-  font-weight: 520;
-  line-height: 1.35;
+  font-weight: 530;
+  line-height: 1.38;
   pointer-events: none;
   box-shadow: var(--shadow-2);
-  max-width: 190px;
+  max-width: 200px;
   opacity: 0;
   transform: translate(-50%, -100%);
-  transition: opacity 0.1s;
+  transition: opacity 0.14s var(--ease);
 }
 
 .tip.show {
@@ -1007,15 +1283,15 @@ h3 {
 }
 
 .tip b {
-  font-weight: 680;
+  font-weight: 690;
   font-variant-numeric: tabular-nums;
 }
 
 /* Vue tableau — le relief exigé par la règle de contraste */
 .table-toggle {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 12.5px;
-  font-weight: 560;
+  font-weight: 580;
   color: var(--accent);
 }
 
@@ -1029,7 +1305,7 @@ h3 {
 .dtable th,
 .dtable td {
   text-align: right;
-  padding: 6px 4px;
+  padding: 7px 4px;
   border-bottom: 1px solid var(--hairline);
   font-variant-numeric: tabular-nums;
 }
@@ -1041,28 +1317,28 @@ h3 {
 
 .dtable th {
   color: var(--ink-3);
-  font-weight: 600;
+  font-weight: 620;
   font-size: 11.5px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-/* ---------- 9. États ---------- */
+/* ---------- 12. États ---------- */
 
 .empty {
   text-align: center;
-  padding: 40px 24px;
+  padding: 44px 24px;
   color: var(--ink-3);
 }
 
 .empty .em {
-  font-size: 40px;
-  margin-bottom: 10px;
+  font-size: 42px;
+  margin-bottom: 12px;
 }
 
 .empty h3 {
   color: var(--ink);
-  font-size: 16px;
+  font-size: 16.5px;
   margin-bottom: 6px;
 }
 
@@ -1074,15 +1350,18 @@ h3 {
 
 .banner {
   display: flex;
-  gap: 10px;
+  gap: 11px;
   align-items: flex-start;
-  background: var(--accent-wash);
+  background: linear-gradient(var(--accent-wash), var(--accent-wash)), var(--glass);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   border-radius: var(--r-md);
-  padding: 12px 14px;
+  padding: 13px 15px;
   font-size: 13px;
   color: var(--ink-2);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   line-height: 1.45;
+  box-shadow: var(--shadow-1);
 }
 
 .banner .em {
@@ -1091,18 +1370,24 @@ h3 {
 }
 
 .banner.warn {
-  background: color-mix(in srgb, var(--st-warn) 16%, var(--surface));
+  background: linear-gradient(
+      color-mix(in srgb, var(--st-warn) 22%, transparent),
+      color-mix(in srgb, var(--st-warn) 22%, transparent)
+    ),
+    var(--glass);
 }
 
-/* Feuille modale (détail d'opération, sélecteurs) */
+/* Feuille modale */
 .sheet-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
   z-index: 50;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s;
+  transition: opacity 0.3s var(--ease);
 }
 
 .sheet-scrim.open {
@@ -1112,19 +1397,22 @@ h3 {
 
 .sheet {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
   z-index: 51;
-  max-width: 560px;
+  max-width: 544px;
   margin: 0 auto;
-  background: var(--surface);
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
-  padding: 8px var(--gut) calc(env(safe-area-inset-bottom, 0px) + 20px);
-  transform: translateY(101%);
-  transition: transform 0.24s cubic-bezier(0.2, 0.7, 0.3, 1);
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(34px) saturate(200%);
+  backdrop-filter: blur(34px) saturate(200%);
+  border-radius: var(--r-xl);
+  padding: 8px var(--gut) calc(env(safe-area-inset-bottom, 0px) + 22px);
+  transform: translateY(calc(100% + 16px));
+  transition: transform 0.42s var(--ease);
   max-height: 86dvh;
   overflow-y: auto;
+  box-shadow: var(--shadow-float);
 }
 
 .sheet.open {
@@ -1132,45 +1420,52 @@ h3 {
 }
 
 .sheet .grabber {
-  width: 38px;
-  height: 4px;
+  width: 40px;
+  height: 5px;
   border-radius: var(--r-full);
-  background: var(--surface-3);
-  margin: 6px auto 14px;
+  background: var(--baseline);
+  opacity: 0.4;
+  margin: 7px auto 15px;
 }
 
 .sheet h2 {
-  font-size: 17px;
+  font-size: 18px;
   margin-bottom: 14px;
 }
 
-/* Groupe de jour dans la liste d'opérations */
+/* Groupe de jour */
 .daygroup {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 14px 16px 6px;
-  font-size: 12px;
-  font-weight: 620;
+  padding: 15px 16px 7px;
+  font-size: 11.5px;
+  font-weight: 650;
   color: var(--ink-3);
   text-transform: capitalize;
-  background: var(--surface);
+  letter-spacing: 0.02em;
 }
 
 .daygroup .sum {
   font-variant-numeric: tabular-nums;
-  font-weight: 550;
+  font-weight: 560;
   text-transform: none;
+  letter-spacing: 0;
 }
 
 .load-more {
   display: block;
   width: 100%;
-  padding: 14px;
+  padding: 15px;
   font-size: 13.5px;
-  font-weight: 580;
+  font-weight: 600;
   color: var(--accent);
   border-top: 1px solid var(--hairline);
+  transition: background 0.18s;
+}
+
+.load-more:active {
+  background: var(--glass-inset);
 }
 
 /* Grille de statistiques */
@@ -1178,33 +1473,33 @@ h3 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .stat {
-  background: var(--surface);
+  background: var(--glass);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-1);
-  padding: 13px 14px;
+  padding: 14px 15px;
 }
 
 .stat .k {
   font-size: 11.5px;
   color: var(--ink-3);
-  font-weight: 550;
+  font-weight: 560;
 }
 
 .stat .v {
-  font-size: 21px;
-  font-weight: 650;
-  letter-spacing: -0.02em;
+  font-size: 22px;
+  font-weight: 660;
+  letter-spacing: -0.025em;
   margin-top: 2px;
 }
 
 .stat .d {
   font-size: 11.5px;
-  font-weight: 560;
-  margin-top: 2px;
+  font-weight: 570;
+  margin-top: 3px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1225,15 +1520,120 @@ h3 {
 .file-drop {
   border: 1.5px dashed var(--baseline);
   border-radius: var(--r-md);
-  padding: 22px 16px;
+  padding: 24px 16px;
   text-align: center;
   color: var(--ink-3);
   font-size: 13.5px;
-  margin-bottom: 12px;
-  transition: border-color 0.15s, background 0.15s;
+  margin-bottom: 14px;
+  background: var(--glass-inset);
+  transition: border-color 0.2s, background 0.2s, transform 0.2s var(--ease);
 }
 
 .file-drop.over {
   border-color: var(--accent);
   background: var(--accent-wash);
+  transform: scale(1.015);
+}
+
+/* ---------- 13. Repli et accessibilité ---------- */
+
+/* Sans backdrop-filter (anciens navigateurs), le verre deviendrait une vitre
+   sale : on repasse sur des surfaces franches. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --glass: rgba(255, 255, 255, 0.94);
+    --glass-strong: rgba(255, 255, 255, 0.97);
+    --glass-bar: rgba(234, 238, 248, 0.96);
+    --glass-nav: rgba(255, 255, 255, 0.97);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --glass: rgba(24, 27, 33, 0.95);
+      --glass-strong: rgba(26, 30, 37, 0.98);
+      --glass-bar: rgba(8, 10, 15, 0.96);
+      --glass-nav: rgba(24, 28, 36, 0.97);
+    }
+  }
+  :root[data-theme="dark"] {
+    --glass: rgba(24, 27, 33, 0.95);
+    --glass-strong: rgba(26, 30, 37, 0.98);
+    --glass-bar: rgba(8, 10, 15, 0.96);
+    --glass-nav: rgba(24, 28, 36, 0.97);
+  }
+}
+
+/* « Réduire la transparence » d'iOS : le verre devient opaque, l'aurore se calme. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass: #ffffff;
+    --glass-strong: #ffffff;
+    --glass-bar: #eaeef8;
+    --glass-nav: #ffffff;
+    --glass-inset: #eef0f5;
+  }
+  :root[data-theme="dark"] {
+    --glass: #181b21;
+    --glass-strong: #1c2028;
+    --glass-bar: #070910;
+    --glass-nav: #1c2028;
+    --glass-inset: #242932;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --glass: #181b21;
+      --glass-strong: #1c2028;
+      --glass-bar: #070910;
+      --glass-nav: #1c2028;
+      --glass-inset: #242932;
+    }
+  }
+  #bg i {
+    opacity: 0.35;
+  }
+  .topbar.is-stuck,
+  .tabbar,
+  .sheet,
+  .chip,
+  .icon-btn,
+  .search,
+  .stepper,
+  .banner,
+  .tip {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #bg i {
+    animation: none;
+  }
+  .screen.is-active {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+  .icon-btn:active,
+  .chip:active,
+  .btn:active,
+  .tabbar button:active svg,
+  .stepper button:active {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .card,
+  .stat,
+  .tabbar,
+  .sheet,
+  .chip {
+    border: 1px solid CanvasText;
+  }
+  #bg {
+    display: none;
+  }
 }

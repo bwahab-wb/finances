@@ -259,7 +259,7 @@
     const dark =
       t === "dark" || (t === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
     const meta = $('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", dark ? "#0f1115" : "#f4f5f7");
+    if (meta) meta.setAttribute("content", dark ? "#0a0c11" : "#eef1f6");
   }
 
   /* ---------- Événements ---------- */

@@ -162,15 +162,40 @@ python3 -m http.server 8000
 Tous les chemins sont relatifs : l'application fonctionne à la racine d'un domaine comme
 dans un sous-dossier, sans reconfiguration.
 
+### Liquid Glass
+
+L'interface reprend le matériau introduit par iOS 26 : un fond coloré vivant (quatre halos
+qui dérivent lentement) et, au-dessus, des surfaces translucides qui le laissent
+transparaître, accrochent la lumière sur leurs arêtes et **flottent** au lieu d'être posées —
+barre d'onglets détachée en capsule, feuille modale décollée des bords, rayons concentriques.
+
+Trois décisions non évidentes :
+
+- **Le fond n'est pas une décoration.** Sans quelque chose derrière, du verre translucide ne
+  montre rien et l'effet retombe à plat. Les halos sont dimensionnés en `vmax`, jamais en
+  `vw` : sur un téléphone (390 × 844), des halos en `vw` se réduisent à de petits disques
+  tassés dans les coins et laissent le centre nu.
+- **Le flou d'arrière-plan est réservé aux éléments flottants** — barre de titre, barre
+  d'onglets, feuille, pastilles — c'est-à-dire à ceux qui recouvrent du contenu en mouvement.
+  Les cartes qui défilent s'en passent : l'aurore derrière elles est un dégradé lisse, la
+  flouter ne change rien à l'œil et coûterait une couche de composition par carte.
+- **Le verre coûte du contraste, il faut le mesurer.** Les couleurs ne sont pas validées sur
+  un fond opaque théorique mais sur la surface **réellement composée** (halo le plus saturé +
+  verre).
+
 ### Palette
 
-La palette catégorielle est validée pour le daltonisme sur les deux surfaces de l'application
-(`#ffffff` clair, `#181b21` sombre) : bande de clarté, plancher de chroma, séparation CVD
-(ΔE 9,1 clair / 8,4 sombre) et vision normale (19,6 / 19,3) — tous les seuils sont franchis.
-Trois teintes claires passent sous 3:1 en mode clair : chaque graphique catégoriel est donc
-doublé d'une **légende et d'une vue tableau**, l'identité ne repose jamais sur la couleur
-seule. Au-delà de huit catégories, les suivantes sont regroupées dans « Autres » plutôt que
-de recevoir une teinte générée.
+Validée pour le daltonisme sur ces surfaces composées (`#eff0fd` clair, `#1e2e4b` sombre) :
+bande de clarté, plancher de chroma, séparation CVD (ΔE 9,1 / 8,4) et vision normale
+(19,6 / 19,3) — tous les seuils sont franchis. Quatre teintes passent sous 3:1 en clair, une
+en sombre : chaque graphique catégoriel est donc doublé d'une **légende et d'une vue
+tableau**, l'identité ne repose jamais sur la couleur seule. Au-delà de huit catégories, les
+suivantes sont regroupées dans « Autres » plutôt que de recevoir une teinte générée. Les
+encres du texte secondaire ont été recalculées pour tenir 4,5:1 sur ces mêmes surfaces.
+
+Trois réglages système sont respectés : `prefers-reduced-transparency` rend le verre opaque,
+`prefers-reduced-motion` fige les halos, `forced-colors` supprime le fond et cerne les
+surfaces.
 
 ---
 

@@ -68,7 +68,7 @@ const Views = (() => {
     const color = `var(${c.slot})`;
     return `
       <button class="row" data-op="${i}">
-        <span class="dot" style="--c-wash:color-mix(in srgb, ${color} 15%, var(--surface))">${c.icon}</span>
+        <span class="dot" style="--c-wash:color-mix(in srgb, ${color} 15%, var(--chart-surface))">${c.icon}</span>
         <span class="body">
           <span class="t">${esc(o.label)}</span>
           <span class="s">${esc(o.category)}${o.account ? " · " + esc(o.account) : ""}</span>
@@ -411,7 +411,7 @@ const Views = (() => {
     return "var(--st-good)";
   }
   function meterTrack(ratio) {
-    return `color-mix(in srgb, ${meterFill(ratio)} 18%, var(--surface-3))`;
+    return `color-mix(in srgb, ${meterFill(ratio)} 18%, var(--chart-track))`;
   }
 
   function gauge(state, r) {
@@ -422,7 +422,7 @@ const Views = (() => {
     return `
       <div class="gauge">
         <div class="gauge-top">
-          <span class="dot sm" style="--c-wash:color-mix(in srgb, var(${c.slot}) 15%, var(--surface))">${c.icon}</span>
+          <span class="dot sm" style="--c-wash:color-mix(in srgb, var(${c.slot}) 15%, var(--chart-surface))">${c.icon}</span>
           <span class="n">${esc(r.category)}</span>
           <span class="v">${Fmt.eur(r.actual)} <small>/ ${r.planned ? Fmt.eur(r.planned) : "—"}</small></span>
         </div>
@@ -677,7 +677,7 @@ const Views = (() => {
     return `
       <h2>Détail de l'opération</h2>
       <div class="row" style="padding-left:0;padding-right:0">
-        <span class="dot" style="--c-wash:color-mix(in srgb, var(${c.slot}) 15%, var(--surface))">${c.icon}</span>
+        <span class="dot" style="--c-wash:color-mix(in srgb, var(${c.slot}) 15%, var(--chart-surface))">${c.icon}</span>
         <span class="body">
           <span class="t" style="font-size:16px">${esc(o.label)}</span>
           <span class="s">${esc(Fmt.dayLong(o.date))}</span>
