@@ -6,7 +6,7 @@
    la purge de l'ancien : tant qu'il ne change pas, `activate` n'a rien à
    supprimer et l'ancienne version survit indéfiniment. */
 
-const VERSION = "mes-comptes-v5";
+const VERSION = "mes-comptes-v6";
 
 const SHELL = [
   "./",

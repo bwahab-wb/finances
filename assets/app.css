@@ -752,24 +752,40 @@ h3 {
   min-width: 0;
 }
 
-.row .t {
-  font-size: 14.5px;
-  font-weight: 530;
+/* `display: block` est indispensable : overflow et text-overflow ne
+   s'appliquent pas à une boîte inline, et ces libellés sont des <span>. Sans
+   lui, l'ellipse ne se déclenche jamais et un libellé de relevé bancaire passe
+   par-dessus le montant. */
+.row .t,
+.row .s {
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.row .t {
+  font-size: 14.5px;
+  font-weight: 530;
 }
 
 .row .s {
   font-size: 12px;
   color: var(--ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   margin-top: 1px;
 }
 
+/* Dans la feuille de détail, le libellé complet est justement ce qu'on vient
+   lire : il passe à la ligne au lieu d'être coupé. */
+#sheet .row .t,
+#sheet .row .s {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
 .row .amt {
+  flex: none; /* le montant ne se laisse jamais comprimer par le libellé */
   font-size: 14.5px;
   font-weight: 620;
   letter-spacing: -0.015em;

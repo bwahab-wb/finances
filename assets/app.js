@@ -73,7 +73,6 @@
     $("#btn-settings").hidden = false;
     const meta = SCREENS[state.screen];
     $("#title").textContent = meta.title;
-    $("#subtitle").textContent = subtitleFor();
 
     let html = "";
     switch (state.screen) {
@@ -94,6 +93,11 @@
         break;
     }
     view.innerHTML = html;
+
+    // Le sous-titre est renseigné APRÈS la construction de l'écran : c'est elle
+    // qui remplit state.viewOps, et le lire avant affichait « 0 opération »
+    // sur une liste pourtant pleine.
+    $("#subtitle").textContent = subtitleFor();
 
     // Les graphiques ont besoin de la largeur réelle : on monte après la mise en page.
     requestAnimationFrame(() => {
