@@ -1,0 +1,52 @@
+# Publication sur GitHub Pages, pilotée explicitement.
+#
+# Pourquoi ce fichier plutôt que la publication automatique depuis une branche :
+# le pipeline implicite de GitHub enchaîne un build Jekyll puis un déploiement
+# sur lequel on n'a aucune prise, et dont l'étape « deploy » expire au bout de
+# dix minutes sans rien dire de plus que « Timeout reached ». Ici, chaque étape
+# est nommée, versionnée et relançable — et il n'y a plus de build du tout,
+# puisque le site est déjà statique.
+#
+# ⚠️ Exige que la source soit réglée sur « GitHub Actions »
+#    (Settings → Pages → Build and deployment → Source).
+
+name: Publier sur GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # permet de relancer à la main depuis l'onglet Actions
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une seule publication à la fois. On laisse finir celle en cours au lieu de
+# l'annuler : un déploiement interrompu en plein vol peut laisser Pages dans un
+# état bloqué, et c'est précisément ce qui fait expirer les suivants.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Configurer Pages
+        uses: actions/configure-pages@v5
+
+      - name: Empaqueter le site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: . # tout est statique : rien à construire
+
+      - name: Déployer
+        id: deploiement
+        uses: actions/deploy-pages@v4
