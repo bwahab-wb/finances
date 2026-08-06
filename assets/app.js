@@ -108,6 +108,9 @@
     });
 
     $$("#tabbar button").forEach((b) => b.setAttribute("aria-selected", b.dataset.tab === state.screen));
+    // La lentille se déplace par colonnes entières : cinq onglets, donc 100 % de
+    // sa propre largeur (20 % de la barre) par cran.
+    tabbar.style.setProperty("--tab-i", Object.keys(SCREENS).indexOf(state.screen));
   }
 
   function subtitleFor() {

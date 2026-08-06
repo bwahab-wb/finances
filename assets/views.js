@@ -354,14 +354,16 @@ const Views = (() => {
       .map((r) => ({ label: r.category, value: r.gap, planned: r.planned, actual: r.actual }));
 
     return `
-      <div class="stepper">
-        <button data-month="prev" ${idx <= 0 ? "disabled" : ""} aria-label="Mois précédent">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <span class="lbl">${esc(Fmt.monthLong(key))}</span>
-        <button data-month="next" ${idx < 0 || idx >= months.length - 1 ? "disabled" : ""} aria-label="Mois suivant">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
+      <div class="period-card">
+        <div class="period-nav">
+          <button class="nav-arrow" data-month="prev" ${idx <= 0 ? "disabled" : ""} aria-label="Mois précédent">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <span class="lbl">${esc(Fmt.monthLong(key))}</span>
+          <button class="nav-arrow" data-month="next" ${idx < 0 || idx >= months.length - 1 ? "disabled" : ""} aria-label="Mois suivant">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
       </div>
 
       <div class="card">
@@ -483,8 +485,10 @@ const Views = (() => {
     const famItems = famOrder.filter((k) => fam.has(k)).map((k) => ({ label: k, value: fam.get(k), slot: famSlots[k] }));
 
     return `
-      <div class="chips" role="group" aria-label="Période d'analyse">
-        ${PERIODS.map((p) => `<button class="chip" data-anaperiod="${p.id}" aria-pressed="${f.anaPeriod === p.id}">${p.label}</button>`).join("")}
+      <div class="period-card">
+        <div class="period-pills" role="group" aria-label="Période d'analyse">
+          ${PERIODS.map((p) => `<button class="chip" data-anaperiod="${p.id}" aria-pressed="${f.anaPeriod === p.id}">${p.label}</button>`).join("")}
+        </div>
       </div>
 
       <div class="stats">

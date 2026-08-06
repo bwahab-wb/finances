@@ -169,6 +169,14 @@ qui dérivent lentement) et, au-dessus, des surfaces translucides qui le laissen
 transparaître, accrochent la lumière sur leurs arêtes et **flottent** au lieu d'être posées —
 barre d'onglets détachée en capsule, feuille modale décollée des bords, rayons concentriques.
 
+La **barre d'onglets** porte une lentille de verre qui *glisse* d'un onglet à l'autre avec un
+léger dépassement élastique, bordée de franges violet et cyan — l'aberration chromatique qui
+signale une lentille. La réfraction optique d'iOS 26 repose sur un `feDisplacementMap` que
+Safari mobile refuse dans `backdrop-filter` : l'effet est donc reproduit par ses signes
+visibles (grossissement, spéculaire, franges, ressort du déplacement), pas par un calcul
+optique. Le **sélecteur de période** est une carte à flèches cerclées et libellé centré, avec
+une rangée de pastilles contournées qui passe à la ligne plutôt que de défiler.
+
 Trois décisions non évidentes :
 
 - **Le fond n'est pas une décoration.** Sans quelque chose derrière, du verre translucide ne
