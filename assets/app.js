@@ -34,7 +34,7 @@
     catalog: new Map(),
     accounts: [],
     settings: structuredClone(DEFAULT_SETTINGS),
-    filters: { period: "3m", account: "all", category: "all", query: "", limit: 50, anaPeriod: "12m", budgetMonth: null },
+    filters: { period: "3m", account: "all", category: "all", query: "", limit: 50, anaSize: "1m", anaAnchor: null, budgetMonth: null },
   };
 
   const view = $("#view");
@@ -225,6 +225,7 @@
       const parsed = Data.parseWorkbook(new Uint8Array(buf), file.name);
       state.raw = parsed;
       state.filters.budgetMonth = null;
+      state.filters.anaAnchor = null;
       rebuild();
       await persist();
       state.screen = "comptes";
@@ -312,10 +313,30 @@
       return;
     }
 
-    const ana = t.closest("[data-anaperiod]");
-    if (ana) {
-      state.filters.anaPeriod = ana.dataset.anaperiod;
+    const size = t.closest("[data-anasize]");
+    if (size) {
+      state.filters.anaSize = size.dataset.anasize;
       render();
+      return;
+    }
+
+    const step = t.closest("[data-anastep]");
+    if (step) {
+      const months = [...new Set(state.ops.map((o) => Data.monthKey(o.date)))].sort();
+      if (months.length) {
+        const w = Views.anaWindow(state);
+        if (w.anchor) {
+          const delta = (step.dataset.anastep === "prev" ? -1 : 1) * w.size.months;
+          const [y, mo] = w.anchor.split("-").map(Number);
+          const d = new Date(y, mo - 1 + delta, 1);
+          let next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          // On reste dans l'historique : la fenêtre ne sort jamais des données.
+          if (next < months[0]) next = months[0];
+          if (next > months[months.length - 1]) next = months[months.length - 1];
+          state.filters.anaAnchor = next;
+          render();
+        }
+      }
       return;
     }
 

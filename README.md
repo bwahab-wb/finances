@@ -29,8 +29,12 @@ les offres partenaires. Il n'y a ni serveur, ni identifiant, ni réseau.
    liste groupée par jour avec sous-total quotidien, détail en feuille modale.
 3. **Budget** — sélecteur de mois, reste à dépenser global, une jauge par catégorie
    (vert → jaune → orange → rouge selon le taux de consommation), graphique d'écart au budget.
-4. **Analyse** — répartition en donut, revenus vs dépenses par mois, solde cumulé,
-   postes de dépense classés, familles, comparaison à N-1.
+4. **Analyse** — **fenêtre navigable** : les pastilles donnent sa largeur (1 mois, 3 mois,
+   1 an, tout), les flèches la déplacent d'un pas égal à cette largeur, sans chevauchement.
+   Carte **Balance** comparant entrées et sorties de la fenêtre par deux blocs proportionnels
+   sur une base commune, puis répartition en donut, revenus vs dépenses par mois, solde
+   cumulé, postes classés, familles et comparaison à N-1 — devenue exacte depuis que la
+   fenêtre est ancrée sur un mois plutôt que sur « aujourd'hui ».
 5. **Réglages** — import du classeur, inventaire des feuilles lues, règles de lecture,
    nommage des comptes et soldes d'ouverture, thème, effacement des données.
 

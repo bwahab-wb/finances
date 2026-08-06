@@ -133,7 +133,6 @@
     --rim-hi: rgba(255, 255, 255, 0.3);
     --rim-lo: rgba(255, 255, 255, 0.03);
     --rim-edge: rgba(255, 255, 255, 0.07);
-  --pill-edge: rgba(255, 255, 255, 0.18);
     --pill-edge: rgba(255, 255, 255, 0.18);
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.32);
     --shadow-2: 0 8px 32px rgba(0, 0, 0, 0.55);
@@ -877,6 +876,110 @@ h3 {
   font-variant-numeric: tabular-nums;
 }
 
+
+/* ---------- Carte Balance : entrées contre sorties ---------- */
+
+.balance-value {
+  font-size: 34px;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.balance-value.pos {
+  color: var(--pos);
+}
+
+.balance-value.neg {
+  color: var(--neg);
+}
+
+/* Deux blocs proportionnels alignés sur une base commune : la hauteur porte la
+   grandeur, et les libellés montent avec leur bloc — c'est l'écart de hauteur
+   qui se lit d'abord, pas les chiffres. */
+.balance-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+  margin-top: 16px;
+  min-height: 152px;
+}
+
+.bal-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.bal-col .k {
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--ink-2);
+}
+
+.bal-col .v {
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin: 1px 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Extrémité arrondie côté donnée, pied carré sur la ligne de base */
+.bal-col .blk {
+  border-radius: var(--r-sm) var(--r-sm) 4px 4px;
+  background: var(--c, var(--s1));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.bal-accounts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+  color: var(--ink-3);
+  text-align: left;
+}
+
+.bal-accounts .badges {
+  display: flex;
+  flex: none;
+}
+
+.bal-accounts .badges i {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-full);
+  display: grid;
+  place-items: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  font-style: normal;
+  color: #fff;
+  letter-spacing: -0.02em;
+  box-shadow: 0 0 0 2px var(--chart-surface);
+}
+
+.bal-accounts .badges i + i {
+  margin-left: -8px;
+}
+
+.bal-accounts .n {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 530;
+  color: var(--ink-2);
+}
+
+.bal-accounts:active {
+  opacity: 0.6;
+}
+
 /* ---------- 9. Contrôles ---------- */
 
 .chips {
@@ -1574,6 +1677,14 @@ h3 {
   font-size: 11.5px;
   color: var(--ink-3);
   font-weight: 560;
+}
+
+.stat .v.up-good {
+  color: var(--pos);
+}
+
+.stat .v.down-bad {
+  color: var(--neg);
 }
 
 .stat .v {

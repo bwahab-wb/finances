@@ -61,6 +61,86 @@ const Views = (() => {
     return ops.filter((o) => o.date >= r.start && o.date <= r.end);
   }
 
+
+  /* ---------- Fenêtre d'analyse navigable ---------- */
+
+  /* Les périodes relatives à aujourd'hui ne se parcourent pas : on passe à une
+     fenêtre ANCRÉE sur un mois, dont les pastilles donnent la largeur et les
+     flèches le déplacement. Le pas vaut la largeur de la fenêtre, de sorte que
+     deux positions successives ne se chevauchent jamais. */
+  const SIZES = [
+    { id: "1m", label: "1 mois", months: 1 },
+    { id: "3m", label: "3 mois", months: 3 },
+    { id: "1y", label: "1 an", months: 12 },
+    { id: "all", label: "Tout", months: 0 },
+  ];
+
+  const monthsOf = (state) => [...new Set(state.ops.map((o) => Data.monthKey(o.date)))].sort();
+
+  function shiftMonth(key, delta) {
+    const [y, m] = key.split("-").map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  const monthName = (key) => {
+    const [y, m] = key.split("-").map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  };
+  const monthNameShort = (key) => {
+    const [y, m] = key.split("-").map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString("fr-FR", { month: "short", year: "numeric" }).replace(".", "");
+  };
+
+  /** Fenêtre courante : bornes, libellé, et si les flèches ont encore où aller. */
+  function anaWindow(state) {
+    const size = SIZES.find((s) => s.id === state.filters.anaSize) || SIZES[0];
+    const months = monthsOf(state);
+    if (!months.length) {
+      const now = Date.now();
+      return { start: 0, end: now, label: "Aucune donnée", size, canPrev: false, canNext: false, anchor: null };
+    }
+    if (size.id === "all") {
+      return {
+        start: new Date(1970, 0, 1).getTime(),
+        end: new Date(2999, 0, 1).getTime(),
+        label: "Tout l'historique",
+        size,
+        canPrev: false,
+        canNext: false,
+        anchor: null,
+      };
+    }
+
+    const anchor = state.filters.anaAnchor && months.includes(state.filters.anaAnchor)
+      ? state.filters.anaAnchor
+      : months[months.length - 1];
+    const [ay, am] = anchor.split("-").map(Number);
+    const startD = new Date(ay, am - size.months, 1);
+    const endD = new Date(ay, am, 0, 23, 59, 59);
+    const firstKey = shiftMonth(anchor, -(size.months - 1));
+
+    // Deux mois d'une même année ne réécrivent pas l'année deux fois.
+    let label;
+    if (size.months === 1) label = monthName(anchor);
+    else if (firstKey.slice(0, 4) === anchor.slice(0, 4))
+      label = `${monthNameShort(firstKey).replace(/ \d{4}$/, "")} – ${monthNameShort(anchor)}`;
+    else label = `${monthNameShort(firstKey)} – ${monthNameShort(anchor)}`;
+
+    return {
+      start: startD.getTime(),
+      end: endD.getTime(),
+      label,
+      size,
+      anchor,
+      // Les bornes se mesurent sur l'ANCRE, pas sur le pas : sinon, en fenêtre de
+      // trois mois, un pas qui dépasserait la fin des données interdirait
+      // d'atteindre la période la plus récente. Le clic, lui, ramène dans les bornes.
+      canPrev: firstKey > months[0],
+      canNext: anchor < months[months.length - 1],
+    };
+  }
+
   /* ---------- Fragments réutilisables ---------- */
 
   function opRow(state, o, i) {
@@ -121,9 +201,13 @@ const Views = (() => {
       </div>`;
   }
 
+  /** `delta.onValue` colore la VALEUR quand c'est elle qui porte le sens (une
+      évolution), et laisse la ligne du dessous en encre neutre : elle n'est
+      alors qu'un repère, pas un jugement. */
   function statTile(k, v, delta) {
-    return `<div class="stat"><div class="k">${esc(k)}</div><div class="v">${v}</div>${
-      delta ? `<div class="d ${delta.cls}">${delta.text}</div>` : ""
+    const vCls = delta && delta.onValue ? ` ${delta.cls}` : "";
+    return `<div class="stat"><div class="k">${esc(k)}</div><div class="v${vCls}">${v}</div>${
+      delta ? `<div class="d ${delta.onValue ? "neutral" : delta.cls}">${delta.text}</div>` : ""
     }</div>`;
   }
 
@@ -448,16 +532,24 @@ const Views = (() => {
 
   function analyse(state) {
     const f = state.filters;
-    const r = range(f.anaPeriod);
+    const w = anaWindow(state);
+    const r = { start: w.start, end: w.end };
     const ops = inRange(state.ops, r);
     const m = Data.measures(ops);
 
-    // même fenêtre, décalée d'un an — la seule comparaison qui a du sens
-    const prevRef = new Date();
-    prevRef.setFullYear(prevRef.getFullYear() - 1);
-    const rPrev = range(f.anaPeriod, prevRef);
+    // La même fenêtre, reculée de douze mois — devenue exacte depuis qu'elle est
+    // ancrée sur un mois plutôt que sur « aujourd'hui ».
+    const rPrev = { start: new Date(new Date(w.start).setFullYear(new Date(w.start).getFullYear() - 1)).getTime(),
+                    end: new Date(new Date(w.end).setFullYear(new Date(w.end).getFullYear() - 1)).getTime() };
     const prev = Data.measures(inRange(state.ops, rPrev));
     const evo = prev.depenses ? (m.depenses - prev.depenses) / prev.depenses : null;
+
+    // Comparaison entrées / sorties : deux blocs proportionnels sur une base
+    // commune. Ils reprennent les teintes du graphique mensuel — vert pour les
+    // revenus, orange pour les dépenses — plutôt que l'accent et un gris : la
+    // même grandeur ne peut pas changer de couleur d'une carte à l'autre.
+    const balMax = Math.max(m.revenus, m.depenses, 1);
+    const blockH = (v) => Math.max(6, Math.round((v / balMax) * 104));
 
     // Seules les catégories qui portent une teinte du catalogue deviennent des parts ;
     // tout le reste tombe dans « Autres ». Sans cela, une catégorie hors des huit
@@ -486,22 +578,58 @@ const Views = (() => {
 
     return `
       <div class="period-card">
-        <div class="period-pills" role="group" aria-label="Période d'analyse">
-          ${PERIODS.map((p) => `<button class="chip" data-anaperiod="${p.id}" aria-pressed="${f.anaPeriod === p.id}">${p.label}</button>`).join("")}
+        <div class="period-nav">
+          <button class="nav-arrow" data-anastep="prev" ${w.canPrev ? "" : "disabled"} aria-label="Période précédente">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <span class="lbl">${esc(w.label)}</span>
+          <button class="nav-arrow" data-anastep="next" ${w.canNext ? "" : "disabled"} aria-label="Période suivante">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+        <div class="period-pills" role="group" aria-label="Largeur de la période">
+          ${SIZES.map((p) => `<button class="chip" data-anasize="${p.id}" aria-pressed="${w.size.id === p.id}">${p.label}</button>`).join("")}
         </div>
       </div>
 
+      <div class="card balance">
+        <div class="card-head">
+          <h2>Balance</h2>
+          <span class="hint">${esc(w.label)}</span>
+        </div>
+        <div class="balance-value ${m.soldeNet >= 0 ? "pos" : "neg"}">${Fmt.signed(m.soldeNet)}</div>
+        <div class="balance-split">
+          <div class="bal-col">
+            <div class="k">Entrées</div>
+            <div class="v">${Fmt.eur2(m.revenus)}</div>
+            <div class="blk" style="height:${blockH(m.revenus)}px;--c:var(--s3)"></div>
+          </div>
+          <div class="bal-col">
+            <div class="k">Sorties</div>
+            <div class="v">${Fmt.eur2(m.depenses)}</div>
+            <div class="blk" style="height:${blockH(m.depenses)}px;--c:var(--s2)"></div>
+          </div>
+        </div>
+        <button class="bal-accounts" data-goto="comptes">
+          <span class="badges">${state.accounts
+            .slice(0, 4)
+            .map((a) => `<i style="background:var(${a.slot})">${esc(a.code.slice(0, 2).toUpperCase())}</i>`)
+            .join("")}</span>
+          <span class="n">${state.accounts.length} compte${state.accounts.length > 1 ? "s" : ""}</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+
       <div class="stats">
-        ${statTile("Dépenses", Fmt.eur(m.depenses), {
+        ${statTile("Dépenses vs N-1", evo == null ? "—" : `${evo > 0 ? "+" : ""}${Fmt.pct(evo)}`, {
           cls: evo == null ? "neutral" : evo > 0 ? "down-bad" : "up-good",
-          text: evo == null ? "pas de N-1" : `${evo > 0 ? "▲" : "▼"} ${Fmt.pct(Math.abs(evo))} vs N-1`,
+          onValue: true,
+          text: evo == null ? "pas de période comparable" : `${Fmt.eur(prev.depenses)} l'an dernier`,
         })}
-        ${statTile("Revenus", Fmt.eur(m.revenus), { cls: "neutral", text: `${Fmt.num(m.nbMois)} mois` })}
-        ${statTile("Solde net", Fmt.signed(m.soldeNet), {
-          cls: m.soldeNet >= 0 ? "up-good" : "down-bad",
-          text: m.soldeNet >= 0 ? "excédent" : "déficit",
+        ${statTile("Taux d'épargne", Fmt.pct(m.tauxEpargne), {
+          cls: m.tauxEpargne >= 0.1 ? "up-good" : "neutral",
+          text: `${Fmt.num(m.nbOperations)} opérations`,
         })}
-        ${statTile("Taux d'épargne", Fmt.pct(m.tauxEpargne), { cls: "neutral", text: `${Fmt.num(m.nbOperations)} opérations` })}
       </div>
 
       <div class="card">
@@ -517,14 +645,18 @@ const Views = (() => {
         ${tableView(slices, m.depenses)}
       </div>
 
-      <div class="card">
-        <div class="card-head"><h2>Revenus et dépenses par mois</h2></div>
-        <div data-chart="months"></div>
-        <div class="legend">
-          <span><i class="swatch" style="--c:var(--s3)"></i>Revenus</span>
-          <span><i class="swatch" style="--c:var(--s2)"></i>Dépenses</span>
-        </div>
-      </div>
+      ${
+        months.length > 1
+          ? `<div class="card">
+              <div class="card-head"><h2>Revenus et dépenses par mois</h2></div>
+              <div data-chart="months"></div>
+              <div class="legend">
+                <span><i class="swatch" style="--c:var(--s3)"></i>Revenus</span>
+                <span><i class="swatch" style="--c:var(--s2)"></i>Dépenses</span>
+              </div>
+            </div>`
+          : ""
+      }
 
       <div class="card">
         <div class="card-head"><h2>Solde cumulé</h2><span class="hint">virements internes inclus</span></div>
@@ -558,7 +690,8 @@ const Views = (() => {
   function mountAnalyse(state, root) {
     const p = JSON.parse($('[data-payload="analyse"]', root).textContent);
     Charts.donut($('[data-chart="donut"]', root), p.slices);
-    Charts.monthlyColumns($('[data-chart="months"]', root), p.months);
+    const mc = $('[data-chart="months"]', root);
+    if (mc) Charts.monthlyColumns(mc, p.months);
     Charts.areaLine($('[data-chart="cum"]', root), p.cum, { label: "Solde" });
     Charts.rankedBars($('[data-chart="ranked"]', root), p.ranked, { total: p.depenses });
     const fam = $('[data-chart="fam"]', root);
@@ -700,5 +833,5 @@ const Views = (() => {
       </p>`;
   }
 
-  return { comptes, mountComptes, operations, budget, mountBudget, analyse, mountAnalyse, reglages, opDetail, range, inRange, PERIODS };
+  return { anaWindow, comptes, mountComptes, operations, budget, mountBudget, analyse, mountAnalyse, reglages, opDetail, range, inRange, PERIODS };
 })();
