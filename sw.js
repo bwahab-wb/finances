@@ -6,7 +6,7 @@
    la purge de l'ancien : tant qu'il ne change pas, `activate` n'a rien à
    supprimer et l'ancienne version survit indéfiniment. */
 
-const VERSION = "mes-comptes-v3";
+const VERSION = "mes-comptes-v4";
 
 const SHELL = [
   "./",
@@ -69,8 +69,12 @@ self.addEventListener("fetch", (e) => {
       fetch(req)
         .then((res) => {
           if (res && res.status === 200) {
+            // Une navigation n'est rangée sous « index.html » que si la réponse est
+            // bien du HTML : ouvrir /sw.js dans la barre d'adresse est une
+            // navigation, et l'y ranger écraserait la coquille hors ligne.
+            const isShell = req.mode === "navigate" && (res.headers.get("content-type") || "").includes("text/html");
             const copy = res.clone();
-            caches.open(VERSION).then((c) => c.put(req.mode === "navigate" ? "./index.html" : req, copy));
+            caches.open(VERSION).then((c) => c.put(isShell ? "./index.html" : req, copy));
           }
           return res;
         })
