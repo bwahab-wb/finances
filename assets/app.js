@@ -524,7 +524,16 @@
     rebuild();
     render();
 
-    if ("serviceWorker" in navigator && location.protocol === "https:") {
+    if ("serviceWorker" in navigator && window.isSecureContext) {
+      // Quand un nouveau service worker prend la main, la page tourne encore sur
+      // les anciens CSS/JS déjà chargés : on la recharge une fois, sinon la mise
+      // à jour n'apparaît qu'à la visite suivante.
+      let reloading = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (reloading) return;
+        reloading = true;
+        location.reload();
+      });
       navigator.serviceWorker.register("./sw.js").catch(() => {});
     }
   })();

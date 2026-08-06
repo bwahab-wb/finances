@@ -126,6 +126,21 @@ C'est une PWA : elle s'installe sur l'écran d'accueil et fonctionne ensuite hor
 Le service worker met en cache la coquille applicative uniquement ; les données restent en
 IndexedDB.
 
+### Publier une mise à jour
+
+**Bumper `VERSION` dans `sw.js` à chaque publication.** Le nom du cache est ce qui déclenche
+la purge de l'ancien : tant qu'il ne change pas, l'étape `activate` n'a rien à supprimer et
+l'ancienne version survit indéfiniment sur les appareils qui ont déjà ouvert l'application.
+
+Le service worker sert les fichiers de l'application (`index.html`, `assets/`) en
+**réseau d'abord**, cache en secours : une nouvelle version apparaît dès le premier
+rechargement. Seuls la bibliothèque et les icônes, qui ne changent pas, restent en cache
+d'abord. Quand un nouveau worker prend la main, la page se recharge une fois toute seule —
+sans quoi elle continuerait de tourner sur les CSS et JS déjà chargés.
+
+En cas de doute sur ce qui est réellement servi, ouvrir l'URL dans une **fenêtre privée** :
+elle n'a ni service worker ni cache, et montre donc l'état réel du déploiement.
+
 ---
 
 ## Structure
