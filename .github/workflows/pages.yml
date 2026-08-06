@@ -67,3 +67,10 @@ jobs:
       - name: Déployer
         id: deploiement
         uses: actions/deploy-pages@v4
+        with:
+          # 30 minutes au lieu des 10 par défaut. C'est CE compteur qui produit
+          # « Timeout reached, aborting! » : l'action interroge le service Pages
+          # en attendant qu'il déclare la publication terminée, et abandonne au
+          # bout du délai. Quand l'infrastructure GitHub traîne, dix minutes ne
+          # suffisent pas — le déploiement finit par aboutir, mais après coup.
+          timeout: 1800000
