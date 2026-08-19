@@ -335,7 +335,6 @@ const Data = (() => {
         name: ov.name || known.name || code,
         kind: known.kind || "Compte",
         slot: known.slot || SLOTS[i % SLOTS.length],
-        opening: Number(ov.opening) || 0,
       };
     });
   }
@@ -423,10 +422,15 @@ const Data = (() => {
       .map((e) => ({ ...e, net: e.revenus - e.depenses }));
   }
 
-  /** Solde cumulé, calculé sur les opérations NON filtrées par les règles :
-      un virement interne déplace bien de l'argent, il compte dans le solde. */
-  function cumulative(ops, opening = 0) {
-    let run = opening;
+  /** Variation cumulée sur la période affichée : la somme des mouvements, en
+      partant de zéro. Ce n'est PAS un solde — le classeur ne contient aucun
+      point de départ, et tant qu'on n'en aura pas, aucun chiffre de cette
+      application ne prétend dire ce qu'il y a sur un compte à un instant donné.
+
+      Calculée sur les opérations NON filtrées par les règles : un virement
+      interne déplace bien de l'argent, il compte dans la variation. */
+  function cumulative(ops) {
+    let run = 0;
     return ops
       .slice()
       .sort((a, b) => a.date - b.date)
@@ -434,73 +438,6 @@ const Data = (() => {
         run += o.amount;
         return { date: o.date, value: run };
       });
-  }
-
-  function balances(allOps, accounts) {
-    const m = new Map(accounts.map((a) => [a.code, a.opening]));
-    for (const o of allOps) m.set(o.account, (m.get(o.account) || 0) + o.amount);
-    return m;
-  }
-
-  /* ---------- Prévisionnel 30 jours (signature Linxo) ---------- */
-
-  /**
-   * Pas de magie : on ne projette que ce qui se répète. Un libellé normalisé vu
-   * dans au moins 3 mois distincts, à montant stable (écart-type < 20 % de la
-   * moyenne), est considéré comme récurrent et rejoué sur les 30 prochains jours
-   * à son jour habituel. Tout le reste est ignoré — mieux vaut un prévisionnel
-   * prudent qu'une extrapolation inventée.
-   */
-  function forecast(allOps, startBalance, horizonDays = 30) {
-    const now = Date.now();
-    const cutoff = now - 400 * 86400000;
-    const groups = new Map();
-
-    for (const o of allOps) {
-      if (o.date < cutoff || o.date > now) continue;
-      const key = norm(o.label).slice(0, 24) + "|" + (o.amount > 0 ? "+" : "-");
-      const g = groups.get(key) || { items: [], label: o.label, category: o.category };
-      g.items.push(o);
-      groups.set(key, g);
-    }
-
-    const recurring = [];
-    for (const g of groups.values()) {
-      const months = new Set(g.items.map((o) => monthKey(o.date)));
-      if (months.size < 3) continue;
-      const amounts = g.items.map((o) => o.amount);
-      const mean = amounts.reduce((a, b) => a + b, 0) / amounts.length;
-      if (Math.abs(mean) < 1) continue;
-      const sd = Math.sqrt(amounts.reduce((s, a) => s + (a - mean) ** 2, 0) / amounts.length);
-      if (sd > Math.abs(mean) * 0.2) continue;
-
-      const days = g.items.map((o) => new Date(o.date).getDate()).sort((a, b) => a - b);
-      const day = days[Math.floor(days.length / 2)];
-      const last = Math.max(...g.items.map((o) => o.date));
-      recurring.push({ label: g.label, category: g.category, amount: Math.round(mean * 100) / 100, day, last });
-    }
-
-    const points = [];
-    const events = [];
-    let running = startBalance;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    points.push({ date: today.getTime(), value: running });
-
-    for (let i = 1; i <= horizonDays; i++) {
-      const d = new Date(today.getTime() + i * 86400000);
-      for (const r of recurring) {
-        const dim = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-        const dueDay = Math.min(r.day, dim);
-        if (d.getDate() !== dueDay) continue;
-        if (d.getTime() - r.last < 20 * 86400000) continue; // déjà passé ce mois-ci
-        running += r.amount;
-        events.push({ date: d.getTime(), label: r.label, category: r.category, amount: r.amount });
-      }
-      points.push({ date: d.getTime(), value: running });
-    }
-
-    return { points, events: events.sort((a, b) => a.date - b.date), end: running, recurringCount: recurring.length };
   }
 
   /* ---------- Persistance ---------- */
@@ -691,8 +628,6 @@ const Data = (() => {
     byCategory,
     byMonth,
     cumulative,
-    balances,
-    forecast,
     monthKey,
     iconFor,
     familyFor,

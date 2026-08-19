@@ -467,14 +467,6 @@
       return;
     }
 
-    const open = e.target.closest("[data-acct-open]");
-    if (open) {
-      const code = open.dataset.acctOpen;
-      state.settings.accounts[code] = { ...(state.settings.accounts[code] || {}), opening: Number(open.value) || 0 };
-      rebuild();
-      await persist();
-      return;
-    }
   });
 
   // Recherche : on ne re-rend qu'après la frappe, en gardant le focus et le curseur.

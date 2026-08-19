@@ -1841,6 +1841,163 @@ h3 {
   }
 }
 
+/* ---------- 12. Ordinateur ----------
+
+   Même application, même code : au-delà de 900 px la barre d'onglets se
+   redresse en rail vertical à gauche et le flux de cartes se répartit sur
+   plusieurs colonnes. Rien n'est dupliqué — pas de second jeu de vues à
+   maintenir, donc pas de risque qu'une correction n'atterrisse que d'un côté.
+
+   Le multi-colonnes est fait en `columns` et non en grille : les cartes ont des
+   hauteurs très inégales (un graphique, deux tuiles, une liste de 40 lignes) et
+   une grille laisserait de grands trous sous les plus courtes. Les colonnes de
+   texte empilent au plus serré, à condition d'interdire la coupure d'une carte
+   (`break-inside`) et de coller chaque intertitre à sa section (`break-after`). */
+
+@media (min-width: 900px) {
+  :root {
+    --gut: 28px;
+    --rail: 236px;
+  }
+
+  #app {
+    max-width: none;
+    margin: 0;
+    padding-left: var(--rail);
+    padding-bottom: 40px;
+  }
+
+  /* Une ligne de texte ne se lit plus au-delà d'environ 1 200 px : le contenu
+     est borné et centré dans la place restante, il ne s'étire pas à l'infini. */
+  .topbar,
+  .screen {
+    max-width: 1180px;
+    margin-inline: auto;
+  }
+
+  .topbar {
+    padding-top: 22px;
+  }
+
+  .topbar h1 {
+    font-size: 28px;
+  }
+
+  /* --- la barre d'onglets se redresse en rail --- */
+  .tabbar {
+    inset: 0 auto 0 0;
+    width: var(--rail);
+    max-width: none;
+    height: 100dvh;
+    margin: 0;
+    padding: 20px 14px;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 1px 0 0 var(--rim-edge);
+  }
+
+  .tabbar button {
+    flex: none;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    height: 46px;
+    padding: 0 14px;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  .tabbar button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .tabbar button[aria-selected="true"] svg {
+    transform: none;
+  }
+
+  /* La lentille glisse verticalement. Elle est positionnée par rapport au bord
+     du rail, pas à sa zone de contenu : son décalage de départ est donc le
+     padding haut, et un cran vaut la hauteur d'un bouton plus l'écart. */
+  .tab-lens {
+    inset: 0 14px auto 14px;
+    width: auto;
+    height: 46px;
+    transform: translateY(calc(20px + var(--tab-i, 0) * 50px));
+  }
+
+  .tab-lens::before {
+    inset: 0;
+    border-radius: 14px;
+  }
+
+  /* --- le flux de cartes se répartit en colonnes --- */
+  .screen.is-active {
+    columns: 2;
+    column-gap: var(--gut);
+  }
+
+  .card,
+  .stats,
+  .period-card,
+  .rule-bar,
+  .chips,
+  .search,
+  .banner,
+  .empty,
+  .file-drop {
+    break-inside: avoid;
+  }
+
+  /* Un intertitre orphelin en bas de colonne, sa section en haut de la
+     suivante : c'est ce que `break-after` empêche. */
+  .section-title {
+    break-after: avoid;
+    margin-top: 0;
+  }
+
+  /* Le patrimoine est la ligne de titre de l'écran, il traverse les colonnes.
+     Idem pour les contrôles, qui pilotent tout ce qui suit : les reléguer dans
+     une colonne laisserait croire qu'ils ne filtrent que celle-là. Et `.large`
+     marque les blocs qu'une colonne ne peut pas servir — la liste d'opérations
+     est trop haute pour se répartir, elle laisserait sa voisine vide aux trois
+     quarts. */
+  .hero,
+  .period-card,
+  .rule-bar,
+  .search,
+  .chips,
+  .large {
+    column-span: all;
+  }
+
+  /* Les rangées de pastilles défilaient horizontalement, ce qui n'a pas de sens
+     sans doigt : sur ordinateur elles reviennent à la ligne. */
+  .chips {
+    flex-wrap: wrap;
+    overflow: visible;
+    margin: 0;
+    padding: 3px 0 12px;
+  }
+
+  /* Le bandeau de confirmation est centré sur la fenêtre par une règle en
+     ligne posée en JavaScript ; on le recentre sur la zone de contenu en le
+     décalant de la moitié du rail, sans avoir à surcharger cette règle. */
+  #toast {
+    margin-left: calc(var(--rail) / 2);
+  }
+
+  /* Au-delà de 1 500 px une troisième colonne reste lisible ; en dessous, les
+     graphiques deviendraient trop étroits pour leurs étiquettes. */
+  @media (min-width: 1500px) {
+    .screen.is-active {
+      columns: 3;
+    }
+  }
+}
+
 /* « Réduire la transparence » d'iOS : le verre devient opaque, l'aurore se calme. */
 @media (prefers-reduced-transparency: reduce) {
   :root {

@@ -12,8 +12,8 @@ En ligne : `https://bwahab-wb.github.io/finances/`
 
 | Source | Élément repris |
 |---|---|
-| **Bankin'** | Accueil « Comptes » listant tous les comptes avec le patrimoine consolidé en tête · budget en **jauges colorées** par catégorie avec « reste à dépenser » et alerte visuelle de dépassement · catégorisation avec **icône + couleur** par poste · répartition simplifiée en familles *Essentiel / Plaisir / Épargne / Extra* |
-| **Linxo** | Accueil dense qui donne tout d'un coup d'œil · **prévisionnel à 30 jours** avec indicateur météo ☀️/🌧️ · graphiques d'évolution et répartition dès la page d'accueil · groupement et nommage des comptes |
+| **Bankin'** | Accueil « Comptes » listant tous les comptes · budget en **jauges colorées** par catégorie avec « reste à dépenser » et alerte visuelle de dépassement · catégorisation avec **icône + couleur** par poste · répartition simplifiée en familles *Essentiel / Plaisir / Épargne / Extra* |
+| **Linxo** | Accueil dense qui donne tout d'un coup d'œil · graphiques d'évolution et répartition dès la page d'accueil · groupement et nommage des comptes |
 | **Les deux** | Barre d'onglets basse à 5 entrées · liste d'opérations groupée par jour avec sous-total · recherche et filtres en pastilles · feuille modale de détail |
 
 Ce qui **n'a pas** été repris : la connexion aux banques, le compte utilisateur, le cashback,
@@ -23,8 +23,9 @@ les offres partenaires. Il n'y a ni serveur, ni identifiant, ni réseau.
 
 ## Les cinq écrans
 
-1. **Comptes** — patrimoine consolidé, prévisionnel 30 jours, cartes de comptes avec
-   sparkline, solde net et taux d'épargne du mois, top des postes, dernières opérations.
+1. **Comptes** — solde net du mois en tête, flux du mois compte par compte avec
+   sparkline des douze derniers mois, évolution des dépenses et taux d'épargne,
+   top des postes, dernières opérations.
 2. **Opérations** — recherche plein texte, filtres période / compte / catégorie,
    liste groupée par jour avec sous-total quotidien, détail en feuille modale.
 3. **Budget** — sélecteur de mois, reste à dépenser global, une jauge par catégorie
@@ -32,11 +33,11 @@ les offres partenaires. Il n'y a ni serveur, ni identifiant, ni réseau.
 4. **Analyse** — **fenêtre navigable** : les pastilles donnent sa largeur (1 mois, 3 mois,
    1 an, tout), les flèches la déplacent d'un pas égal à cette largeur, sans chevauchement.
    Carte **Balance** comparant entrées et sorties de la fenêtre par deux blocs proportionnels
-   sur une base commune, puis répartition en donut, revenus vs dépenses par mois, solde
-   cumulé, postes classés, familles et comparaison à N-1 — devenue exacte depuis que la
+   sur une base commune, puis répartition en donut, revenus vs dépenses par mois, variation
+   cumulée, postes classés, familles et comparaison à N-1 — devenue exacte depuis que la
    fenêtre est ancrée sur un mois plutôt que sur « aujourd'hui ».
 5. **Réglages** — import du classeur, inventaire des feuilles lues, règles de lecture,
-   nommage des comptes et soldes d'ouverture, thème, effacement des données.
+   nommage des comptes, thème, effacement des données.
 
 ---
 
@@ -85,12 +86,11 @@ débrayables :
 - **Virements internes exclus.** De l'argent déplacé entre tes propres comptes, pas une
   dépense. Sans ce filtre, c'est le premier poste du classement et il écrase les vrais.
 - **Épargne exclue des dépenses.** Une épargne sort du compte courant mais reste ton argent :
-  l'exclure rend le taux d'épargne juste et fait du solde net « ce qui reste réellement
-  disponible ». L'arbitrage inverse est défendable, d'où l'interrupteur.
+  l'exclure rend le taux d'épargne juste et fait du solde net du mois « ce qui reste
+  réellement disponible ». L'arbitrage inverse est défendable, d'où l'interrupteur.
 
-Ces règles s'appliquent aux **analyses et au budget**, jamais aux **soldes** : un virement
-déplace bien de l'argent, il compte toujours dans le solde de chaque compte et dans le solde
-cumulé.
+Ces règles s'appliquent aux **analyses et au budget**, jamais à la **variation cumulée** de
+l'écran Analyse : un virement déplace bien de l'argent, il compte dans les mouvements.
 
 L'épargne est l'arbitrage qui se rediscute le plus souvent : son interrupteur est donc posé
 **directement sur les quatre écrans de données** (Comptes, Opérations, Budget, Analyse), au-dessus
@@ -108,22 +108,27 @@ la règle reste dans les réglages ; sur les écrans de données, seul l'état e
 libellé ne tient pas, c'est lui qui s'abrège — les deux cibles gardent leur taille.
 
 Les mesures reprennent celles du modèle Power BI (revenus, dépenses en positif, solde net,
-taux d'épargne, solde cumulé, dépenses N-1, évolution %, budget, écart, % consommé).
+taux d'épargne, variation cumulée, dépenses N-1, évolution %, budget, écart, % consommé).
 
-### Soldes d'ouverture
+### Aucun solde, pour l'instant
 
-Le classeur ne contient pas de solde de départ. Tant qu'aucun solde d'ouverture n'est saisi,
-l'écran d'accueil affiche « **Solde reconstitué** » — le cumul des opérations, pas le solde
-réel. Saisis les soldes de départ dans les réglages pour obtenir le vrai patrimoine.
+L'application **ne dit pas ce qu'il y a sur un compte à un instant donné**, et ne le
+reconstitue pas non plus. Le classeur ne contient aucun solde de départ : tout cumul
+d'opérations produirait un nombre d'allure officielle mais faux, et un chiffre faux affiché en
+gros est pire qu'un chiffre absent.
 
-### Prévisionnel
+Tout ce que l'application affiche est donc un **flux mesuré sur une période bornée** : le
+solde net du mois en tête d'accueil, ce qui est entré et sorti de chaque compte, la variation
+cumulée sur la fenêtre d'analyse. Aucun de ces chiffres ne demande d'hypothèse.
 
-Seules les opérations **récurrentes détectées** sont projetées : même libellé normalisé,
-montant stable (écart-type < 20 % de la moyenne), présent sur au moins 3 mois distincts,
-rejouées à leur jour habituel. Les dépenses ponctuelles ne sont pas extrapolées — un
-prévisionnel prudent vaut mieux qu'une projection inventée.
+Ce qui a été retiré avec le concept : le patrimoine consolidé, le solde par compte, les champs
+de solde d'ouverture des réglages, et le prévisionnel 30 jours — qui partait du solde total et
+n'avait donc plus de point de départ.
 
----
+Le tracé du prévisionnel (`forecastLine`, dans `charts.js`) est **volontairement conservé**,
+bien qu'inutilisé : c'est la partie la plus longue à réécrire. La détection des opérations
+récurrentes, elle, a été retirée de `data.js` avec le reste — elle se récupère dans
+l'historique Git au commit qui a supprimé le concept.
 
 ## Confidentialité
 
@@ -134,6 +139,34 @@ l'application ne fait que le lire. Pour corriger une ligne, on la corrige dans E
 réimporte.
 
 ---
+
+## Sur ordinateur
+
+Au-delà de **900 px de large**, la même application se réagence : la barre d'onglets basse se
+redresse en **rail vertical à gauche**, et le flux de cartes se répartit sur **deux colonnes**
+(trois au-delà de 1 500 px). En dessous du seuil, rien ne change — c'est la version téléphone
+à l'identique.
+
+Rien n'est dupliqué : ni second jeu de vues, ni fichier `desktop.css`. Tout tient dans un bloc
+`@media` et deux classes. Une correction faite une fois vaut donc pour les deux formats, ce qui
+évite le piège classique des versions « mobile » et « bureau » qui divergent au fil des mois.
+
+Le multi-colonnes utilise `columns` plutôt qu'une grille. Les cartes ont des hauteurs très
+inégales — un graphique, deux tuiles, une liste de quarante lignes — et une grille laisserait
+de grands trous sous les plus courtes. Les colonnes de texte empilent au plus serré, à
+condition d'interdire la coupure d'une carte (`break-inside: avoid`) et de coller chaque
+intertitre à sa section (`break-after: avoid`).
+
+Deux blocs portent la classe `large` : ils traversent toutes les colonnes. Ce sont ceux qu'une
+colonne ne peut pas servir — la liste d'opérations est trop haute pour se répartir, elle
+laisserait sa voisine vide aux trois quarts. Les contrôles qui pilotent l'écran entier
+(sélecteur de période, interrupteur d'épargne, recherche, pastilles de filtre) traversent aussi
+toute la largeur : les reléguer dans une colonne laisserait croire qu'ils ne filtrent que
+celle-là.
+
+Les rangées de pastilles, qui défilent horizontalement au doigt sur téléphone, **reviennent à
+la ligne** sur ordinateur : un défilement horizontal sans doigt ni barre visible est une
+impasse à la souris.
 
 ## Installer sur le téléphone
 

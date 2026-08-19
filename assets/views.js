@@ -1,12 +1,15 @@
 /* ==========================================================================
    views.js — les cinq écrans.
 
-   Comptes    : patrimoine consolidé, cartes de comptes, prévisionnel 30 jours
-                (la lecture d'accueil de Linxo)
+   Comptes    : solde net du mois, flux du mois par compte, où part l'argent
    Opérations : recherche, filtres, liste groupée par jour
    Budget     : jauges prévu / réalisé par catégorie, reste à dépenser
                 (la lecture de Bankin')
-   Analyse    : répartition, revenus vs dépenses, solde cumulé, comparaison N-1
+   Analyse    : répartition, revenus vs dépenses, variation cumulée, comparaison N-1
+
+   Aucun écran ne prétend dire ce qu'il y a sur un compte à un instant donné :
+   le classeur ne porte aucun solde de départ, donc tout ce qui est affiché est
+   un flux, mesuré sur une période bornée.
    Réglages   : import du classeur, règles de lecture, comptes, thème
    ========================================================================== */
 
@@ -239,16 +242,32 @@ const Views = (() => {
   /* ---------- 1. Comptes ---------- */
 
   function comptes(state) {
-    const all = state.all;
     const accounts = state.accounts;
-    const bal = Data.balances(all, accounts);
-    const total = [...bal.values()].reduce((s, v) => s + v, 0);
 
     const thisMonth = inRange(state.ops, range("m"));
     const m = Data.measures(thisMonth);
 
-    const fc = Data.forecast(all, total, 30);
-    const opening = accounts.some((a) => a.opening);
+    // Le mois précédent, borné au mois calendaire : c'est la seule comparaison
+    // honnête pour un chiffre de flux.
+    const ref = new Date();
+    const prev = Data.measures(
+      inRange(state.ops, {
+        start: new Date(ref.getFullYear(), ref.getMonth() - 1, 1).getTime(),
+        end: new Date(ref.getFullYear(), ref.getMonth(), 0, 23, 59, 59).getTime(),
+      })
+    );
+    const evo = prev.depenses ? (m.depenses - prev.depenses) / prev.depenses : null;
+
+    // Flux du mois, compte par compte. Aucun solde n'est reconstitué : le
+    // classeur ne porte pas de point de départ, donc on ne montre que ce qui
+    // se lit vraiment dans les données — ce qui est entré et ce qui est sorti.
+    const flux = new Map(accounts.map((a) => [a.code, { revenus: 0, depenses: 0 }]));
+    for (const o of thisMonth) {
+      const f = flux.get(o.account);
+      if (!f) continue;
+      if (o.amount > 0) f.revenus += o.amount;
+      else f.depenses += -o.amount;
+    }
 
     const recent = state.ops.slice().sort((a, b) => b.date - a.date).slice(0, 6);
     const topCats = Data.byCategory(thisMonth)
@@ -258,49 +277,36 @@ const Views = (() => {
 
     return `
       <div class="hero">
-        <div class="label">${opening ? "Patrimoine total" : "Solde reconstitué"}</div>
-        <div class="value">${Fmt.eur(total)}</div>
+        <div class="label">Solde net du mois</div>
+        <div class="value">${Fmt.signed(m.soldeNet)}</div>
         <div class="meta">
           <div><div class="k">Revenus du mois</div><div class="v">${Fmt.eur(m.revenus)}</div></div>
           <div><div class="k">Dépenses du mois</div><div class="v">${Fmt.eur(m.depenses)}</div></div>
         </div>
       </div>
 
-      ${
-        opening
-          ? ""
-          : `<div class="banner"><span class="em">ℹ️</span><span>Aucun solde d'ouverture renseigné : ce montant est le cumul de toutes les opérations du classeur, pas le solde réel de tes comptes. Tu peux saisir les soldes de départ dans les réglages.</span></div>`
-      }
-
       ${savingsToggle(state)}
 
-      <div class="card">
-        <div class="card-head">
-          <h2>Prévisionnel 30 jours</h2>
-          <span class="hint">${fc.end >= 0 ? "☀️" : "🌧️"} ${Fmt.eur(fc.end)}</span>
-        </div>
-        <div data-chart="forecast"></div>
-        <p style="margin:10px 0 0;font-size:12.5px;color:var(--ink-3);line-height:1.45">
-          Projection des seules opérations récurrentes détectées
-          (${Fmt.num(fc.recurringCount)} identifiée${fc.recurringCount > 1 ? "s" : ""} : même libellé, montant stable, présent sur au moins 3 mois).
-          Les dépenses ponctuelles ne sont pas extrapolées.
-        </p>
-      </div>
-
-      <div class="section-title">Mes comptes</div>
+      <div class="section-title">Mes comptes · flux du mois</div>
       <div class="card flush">
         ${accounts
           .map((a) => {
-            const b = bal.get(a.code) || 0;
+            const f = flux.get(a.code) || { revenus: 0, depenses: 0 };
+            // On n'écrit pas « 0 € entrés » : sur une ligne de 390 px, la
+            // moitié inutile du détail chassait l'autre en points de suspension.
+            const detail =
+              [f.revenus ? `${Fmt.eur(f.revenus)} entrés` : "", f.depenses ? `${Fmt.eur(f.depenses)} sortis` : ""]
+                .filter(Boolean)
+                .join(" · ") || "aucun mouvement ce mois-ci";
             return `
           <button class="acct" data-account="${esc(a.code)}">
             <span class="badge" style="background:var(${a.slot})">${esc(a.code.slice(0, 3).toUpperCase())}</span>
             <span class="body" style="flex:1;min-width:0">
               <span class="name" style="display:block">${esc(a.name)}</span>
-              <span class="kind">${esc(a.kind)}</span>
+              <span class="kind">${esc(detail)}</span>
             </span>
-            <span style="width:64px" data-spark="${esc(a.code)}"></span>
-            <span class="bal">${Fmt.eur(b)}</span>
+            <span style="width:48px" data-spark="${esc(a.code)}"></span>
+            <span class="bal">${Fmt.signed(f.revenus - f.depenses)}</span>
           </button>`;
           })
           .join("")}
@@ -308,9 +314,10 @@ const Views = (() => {
 
       <div class="section-title">Ce mois-ci</div>
       <div class="stats">
-        ${statTile("Solde net", Fmt.signed(m.soldeNet), {
-          cls: m.soldeNet >= 0 ? "up-good" : "down-bad",
-          text: m.soldeNet >= 0 ? "Tu épargnes" : "Tu puises dans tes réserves",
+        ${statTile("Dépenses vs mois dernier", evo == null ? "—" : `${evo > 0 ? "+" : ""}${Fmt.pct(evo)}`, {
+          cls: evo == null ? "neutral" : evo > 0 ? "down-bad" : "up-good",
+          onValue: true,
+          text: evo == null ? "pas de mois comparable" : `${Fmt.eur(prev.depenses)} le mois dernier`,
         })}
         ${statTile("Taux d'épargne", Fmt.pct(m.tauxEpargne), {
           cls: m.tauxEpargne >= 0.1 ? "up-good" : "neutral",
@@ -333,23 +340,26 @@ const Views = (() => {
         <button class="load-more" data-goto="operations">Voir toutes les opérations</button>
       </div>
 
-      <script type="application/json" data-payload="comptes">${payload({ forecast: fc.points, topCats, monthTotal })}</script>
+      <script type="application/json" data-payload="comptes">${payload({ topCats, monthTotal })}</script>
     `;
   }
 
   function mountComptes(state, root) {
     const payload = JSON.parse($('[data-payload="comptes"]', root).textContent);
-    Charts.forecastLine($('[data-chart="forecast"]', root), payload.forecast);
     const tc = $('[data-chart="topcats"]', root);
     if (tc) Charts.rankedBars(tc, payload.topCats, { total: payload.monthTotal });
 
+    // La sparkline trace le solde net mois par mois, pas une trajectoire de
+    // solde : chaque point est ce que le compte a gagné ou perdu ce mois-là.
     for (const a of state.accounts) {
       const holder = $(`[data-spark="${CSS.escape(a.code)}"]`, root);
       if (!holder) continue;
-      const ops = state.all.filter((o) => o.account === a.code);
-      const cum = Data.cumulative(ops, a.opening);
-      const recent = cum.slice(-40);
-      Charts.sparkline(holder, recent, { color: a.slot });
+      const mois = Data.byMonth(state.ops.filter((o) => o.account === a.code)).slice(-12);
+      Charts.sparkline(
+        holder,
+        mois.map((x) => ({ date: x.key, value: x.net })),
+        { color: a.slot }
+      );
     }
   }
 
@@ -397,12 +407,12 @@ const Views = (() => {
 
       ${savingsToggle(state)}
 
-      <div class="stats">
+      <div class="stats large">
         ${statTile("Entrées", Fmt.eur(m.revenus))}
         ${statTile("Sorties", Fmt.eur(m.depenses))}
       </div>
 
-      <div class="card flush">
+      <div class="card flush large">
         ${
           list.length
             ? dayGroups(state, list, f.limit)
@@ -595,7 +605,7 @@ const Views = (() => {
     }
 
     const months = Data.byMonth(ops);
-    const cum = Data.cumulative(inRange(state.all, r), 0);
+    const cum = Data.cumulative(inRange(state.all, r));
 
     // familles : la lecture simplifiée en quatre postes
     const fam = new Map();
@@ -692,8 +702,12 @@ const Views = (() => {
       }
 
       <div class="card">
-        <div class="card-head"><h2>Solde cumulé</h2><span class="hint">virements internes inclus</span></div>
+        <div class="card-head"><h2>Variation cumulée</h2><span class="hint">depuis le début de la période</span></div>
         <div data-chart="cum"></div>
+        <p style="margin:10px 0 0;font-size:12.5px;color:var(--ink-3);line-height:1.45">
+          La somme des mouvements de la période, en partant de zéro — virements internes
+          inclus. Ce n'est pas un solde : le classeur ne contient aucun point de départ.
+        </p>
       </div>
 
       <div class="card">
@@ -793,7 +807,7 @@ const Views = (() => {
         </div>
       </div>
       <p style="font-size:12px;color:var(--ink-3);margin:0 4px 4px;line-height:1.45">
-        Ces deux règles ne touchent ni les soldes ni le solde cumulé : un virement déplace bien de l'argent, il compte toujours dans le solde de chaque compte.
+        Ces deux règles ne s'appliquent qu'aux analyses et au budget. La variation cumulée de l'écran Analyse, elle, compte tous les mouvements sans exception : un virement déplace bien de l'argent.
       </p>
 
       <div class="section-title">Comptes</div>
@@ -804,10 +818,6 @@ const Views = (() => {
           <div class="field">
             <div><div class="k">${esc(a.code)}</div><div class="d">Nom affiché</div></div>
             <input type="text" value="${esc(a.name)}" data-acct-name="${esc(a.code)}" aria-label="Nom du compte ${esc(a.code)}">
-          </div>
-          <div class="field">
-            <div><div class="k">Solde d'ouverture</div><div class="d">Solde avant la première ligne du classeur</div></div>
-            <input type="number" step="0.01" value="${a.opening}" data-acct-open="${esc(a.code)}" aria-label="Solde d'ouverture ${esc(a.code)}">
           </div>`
           )
           .join("")}
