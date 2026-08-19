@@ -1857,25 +1857,31 @@ h3 {
 @media (min-width: 900px) {
   :root {
     --gut: 28px;
-    --rail: 236px;
+    /* Hauteur réservée en haut : la capsule (56) plus son décollement du bord
+       (14) plus l'air en dessous. */
+    --bar-top: 78px;
   }
 
   #app {
     max-width: none;
     margin: 0;
-    padding-left: var(--rail);
+    padding-top: var(--bar-top);
     padding-bottom: 40px;
   }
 
-  /* Une ligne de texte ne se lit plus au-delà d'environ 1 200 px : le contenu
-     est borné et centré dans la place restante, il ne s'étire pas à l'infini. */
+  /* Une ligne de texte ne se lit plus au-delà d'environ 1 100 px. Le contenu est
+     borné et centré sur la FENÊTRE, pas sur une place restante : rien ne le
+     décale plus latéralement, c'est tout l'intérêt d'une barre en haut. */
   .topbar,
   .screen {
-    max-width: 1180px;
+    max-width: 1100px;
     margin-inline: auto;
   }
 
+  /* La barre de titre se colle sous la capsule, pas sous le bord de la fenêtre,
+     sinon elle passerait dessous au défilement. */
   .topbar {
+    top: calc(var(--bar-top) - 8px);
     padding-top: 22px;
   }
 
@@ -1883,54 +1889,15 @@ h3 {
     font-size: 28px;
   }
 
-  /* --- la barre d'onglets se redresse en rail --- */
+  /* La barre d'onglets remonte en haut : c'est exactement la capsule du
+     téléphone, posée en haut plutôt qu'en bas. Rien d'autre à réécrire — la
+     lentille garde sa mécanique d'origine, un cinquième de la barre par cran,
+     et les boutons gardent leur icône au-dessus du libellé. */
   .tabbar {
-    inset: 0 auto 0 0;
-    width: var(--rail);
-    max-width: none;
-    height: 100dvh;
-    margin: 0;
-    padding: 20px 14px;
-    border-radius: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    box-shadow: 1px 0 0 var(--rim-edge);
-  }
-
-  .tabbar button {
-    flex: none;
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 12px;
-    height: 46px;
-    padding: 0 14px;
-    font-size: 14px;
-    letter-spacing: -0.01em;
-  }
-
-  .tabbar button svg {
-    width: 20px;
-    height: 20px;
-  }
-
-  .tabbar button[aria-selected="true"] svg {
-    transform: none;
-  }
-
-  /* La lentille glisse verticalement. Elle est positionnée par rapport au bord
-     du rail, pas à sa zone de contenu : son décalage de départ est donc le
-     padding haut, et un cran vaut la hauteur d'un bouton plus l'écart. */
-  .tab-lens {
-    inset: 0 14px auto 14px;
-    width: auto;
-    height: 46px;
-    transform: translateY(calc(20px + var(--tab-i, 0) * 50px));
-  }
-
-  .tab-lens::before {
-    inset: 0;
-    border-radius: 14px;
+    top: 14px;
+    bottom: auto;
+    max-width: 620px;
+    height: 56px;
   }
 
   /* --- le flux de cartes se répartit en colonnes --- */
@@ -1980,13 +1947,6 @@ h3 {
     overflow: visible;
     margin: 0;
     padding: 3px 0 12px;
-  }
-
-  /* Le bandeau de confirmation est centré sur la fenêtre par une règle en
-     ligne posée en JavaScript ; on le recentre sur la zone de contenu en le
-     décalant de la moitié du rail, sans avoir à surcharger cette règle. */
-  #toast {
-    margin-left: calc(var(--rail) / 2);
   }
 
   /* Au-delà de 1 500 px une troisième colonne reste lisible ; en dessous, les

@@ -142,10 +142,18 @@ réimporte.
 
 ## Sur ordinateur
 
-Au-delà de **900 px de large**, la même application se réagence : la barre d'onglets basse se
-redresse en **rail vertical à gauche**, et le flux de cartes se répartit sur **deux colonnes**
-(trois au-delà de 1 500 px). En dessous du seuil, rien ne change — c'est la version téléphone
-à l'identique.
+Au-delà de **900 px de large**, la même application se réagence : la barre d'onglets passe en
+haut de la fenêtre et le flux de cartes se répartit sur **deux colonnes** (trois au-delà de
+1 500 px). En dessous du seuil, rien ne change — c'est la version téléphone à l'identique.
+
+La barre haute n'est pas un nouveau composant : c'est **la capsule du téléphone, posée en haut
+plutôt qu'en bas**. Icône au-dessus du libellé, largeur bornée à 620 px, et la lentille de
+verre garde sa mécanique d'origine — un cinquième de la barre par cran. Il suffit de quatre
+déclarations pour l'y amener.
+
+C'est ce qui permet de **centrer le contenu sur la fenêtre** et non sur une place restante :
+une colonne latérale déplace forcément tout le reste vers la droite, une barre horizontale ne
+déplace rien.
 
 Rien n'est dupliqué : ni second jeu de vues, ni fichier `desktop.css`. Tout tient dans un bloc
 `@media` et deux classes. Une correction faite une fois vaut donc pour les deux formats, ce qui
