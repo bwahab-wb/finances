@@ -80,7 +80,7 @@ feuilles de budget existent, la plus fournie est retenue.
 ## Les arbitrages de lecture
 
 Deux règles reprises du rapport Power BI « Finances personnelles », activées par défaut et
-débrayables dans les réglages :
+débrayables :
 
 - **Virements internes exclus.** De l'argent déplacé entre tes propres comptes, pas une
   dépense. Sans ce filtre, c'est le premier poste du classement et il écrase les vrais.
@@ -91,6 +91,15 @@ débrayables dans les réglages :
 Ces règles s'appliquent aux **analyses et au budget**, jamais aux **soldes** : un virement
 déplace bien de l'argent, il compte toujours dans le solde de chaque compte et dans le solde
 cumulé.
+
+L'épargne est l'arbitrage qui se rediscute le plus souvent : son interrupteur est donc posé
+**directement sur les quatre écrans de données** (Comptes, Opérations, Budget, Analyse), au-dessus
+des chiffres qu'il modifie, plutôt que d'obliger à passer par les réglages. Deux positions
+explicites — *Exclus* / *Inclus* — au lieu d'une bascule : sur un bouton unique, on ne sait
+jamais si l'étiquette décrit l'état courant ou ce qu'un appui produirait. Le réglage est
+unique et persistant : le changer sur un écran le change partout, et il survit à la fermeture
+de l'application. Les virements internes, eux, restent dans les réglages — cet arbitrage-là
+ne se rediscute pas au quotidien.
 
 Les mesures reprennent celles du modèle Power BI (revenus, dépenses en positif, solde net,
 taux d'épargne, solde cumulé, dépenses N-1, évolution %, budget, écart, % consommé).
