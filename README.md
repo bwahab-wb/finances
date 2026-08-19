@@ -101,6 +101,12 @@ unique et persistant : le changer sur un écran le change partout, et il survit 
 de l'application. Les virements internes, eux, restent dans les réglages — cet arbitrage-là
 ne se rediscute pas au quotidien.
 
+Le contrôle tient sur **une seule ligne en capsule** (~44 px). Une première version en carte
+à deux lignes en occupait 109, soit un quart de l'écran utile d'un téléphone avant même le
+premier chiffre : pour un réglage d'arrière-plan, c'était trop cher. L'explication complète de
+la règle reste dans les réglages ; sur les écrans de données, seul l'état est affiché. Si le
+libellé ne tient pas, c'est lui qui s'abrège — les deux cibles gardent leur taille.
+
 Les mesures reprennent celles du modèle Power BI (revenus, dépenses en positif, solde net,
 taux d'épargne, solde cumulé, dépenses N-1, évolution %, budget, écart, % consommé).
 

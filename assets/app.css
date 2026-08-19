@@ -1081,76 +1081,62 @@ h3 {
    les quatre écrans de données. Deux positions explicites plutôt qu'une
    bascule : « Exclus / Inclus » se lit sans avoir à deviner ce que ferait un
    appui. La ligne du dessous dit l'effet en cours, pas l'action à venir. */
-.rule-toggle {
+.rule-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background: var(--glass);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   backdrop-filter: blur(16px) saturate(180%);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-full);
   box-shadow: var(--shadow-1);
-  padding: 12px;
+  padding: 5px 6px 5px 12px;
   margin-bottom: 14px;
 }
 
-/* Le sélecteur occupe sa propre ligne, pleine largeur : côte à côte avec le
-   libellé, « Virements d'épargne » se coupait en deux sur un écran de 390 px et
-   les deux positions devenaient des cibles étroites. */
-.rule-toggle .head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.rule-toggle .em {
+.rule-bar .em {
   flex: none;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
 }
 
-.rule-toggle .lbl {
+/* Le libellé cède la place au sélecteur, jamais l'inverse : sur un écran
+   étroit c'est le texte qui s'abrège, les deux cibles gardent leur taille. */
+.rule-bar .k {
   flex: 1;
   min-width: 0;
-}
-
-.rule-toggle .lbl .k {
-  display: block;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 580;
   color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.rule-toggle .lbl .d {
-  display: block;
-  margin-top: 1px;
-  font-size: 11.5px;
-  line-height: 1.35;
-  color: var(--ink-3);
-}
-
-.rule-toggle .seg {
+.rule-bar .seg {
   display: flex;
-  gap: 3px;
-  padding: 3px;
+  flex: none;
+  gap: 2px;
+  padding: 2px;
   border-radius: var(--r-full);
   background: var(--glass-inset);
   box-shadow: inset 0 1px 3px rgba(20, 26, 48, 0.12);
 }
 
-.rule-toggle .seg button {
-  flex: 1;
-  padding: 8px 13px;
+.rule-bar .seg button {
+  padding: 7px 12px;
   border-radius: var(--r-full);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 560;
   color: var(--ink-2);
   transition: background 0.24s var(--ease), color 0.2s, transform 0.2s var(--ease);
 }
 
-.rule-toggle .seg button:active {
+.rule-bar .seg button:active {
   transform: scale(0.94);
 }
 
-.rule-toggle .seg button[aria-pressed="true"] {
+.rule-bar .seg button[aria-pressed="true"] {
   background: var(--accent);
   color: #fff;
   box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.28);
@@ -1924,12 +1910,12 @@ h3 {
   .tabbar,
   .sheet,
   .chip,
-  .rule-toggle {
+  .rule-bar {
     border: 1px solid CanvasText;
   }
   /* En couleurs forcées, le fond d'accent est ignoré : la position retenue ne
      se distinguerait plus. On la cerne. */
-  .rule-toggle .seg button[aria-pressed="true"] {
+  .rule-bar .seg button[aria-pressed="true"] {
     border: 2px solid CanvasText;
   }
   #bg {

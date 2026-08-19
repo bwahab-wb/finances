@@ -218,22 +218,21 @@ const Views = (() => {
 
       Deux positions explicites plutôt qu'une bascule : sur un simple bouton, on
       ne sait jamais si l'étiquette décrit l'état courant ou ce qu'un appui
-      ferait. « Exclus / Inclus » côte à côte lève l'ambiguïté. */
+      ferait. « Exclus / Inclus » côte à côte lève l'ambiguïté.
+
+      Une seule ligne, en capsule : c'est un réglage d'arrière-plan, il doit
+      rester lisible sans manger la hauteur d'écran des chiffres qu'il sert.
+      L'explication complète de la règle vit dans les réglages, pas ici. */
   function savingsToggle(state) {
     const on = !!state.settings.rules.excludeSavings;
     return `
-      <div class="rule-toggle">
-        <div class="head">
-          <span class="em" aria-hidden="true">🐖</span>
-          <span class="lbl">
-            <span class="k">Virements d'épargne</span>
-            <span class="d">${on ? "Écartés des dépenses et du budget" : "Comptés comme des dépenses"}</span>
-          </span>
-        </div>
-        <div class="seg" role="group" aria-label="Virements d'épargne dans les dépenses">
+      <div class="rule-bar">
+        <span class="em" aria-hidden="true">🐖</span>
+        <span class="k">Virements d'épargne</span>
+        <span class="seg" role="group" aria-label="Virements d'épargne dans les dépenses">
           <button data-rule-set="excludeSavings" data-value="1" aria-pressed="${on}">Exclus</button>
           <button data-rule-set="excludeSavings" data-value="0" aria-pressed="${!on}">Inclus</button>
-        </div>
+        </span>
       </div>`;
   }
 
