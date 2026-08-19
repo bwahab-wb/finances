@@ -387,6 +387,28 @@
       return;
     }
 
+    // Les boutons « Exclus / Inclus » posent une valeur, ils ne basculent pas :
+    // deux appuis de suite sur « Exclus » doivent laisser la règle exclue, sinon
+    // le contrôle se contredirait lui-même.
+    const ruleSet = t.closest("[data-rule-set]");
+    if (ruleSet) {
+      const k = ruleSet.dataset.ruleSet;
+      const v = ruleSet.dataset.value === "1";
+      if (state.settings.rules[k] === v) return; // déjà dans cet état
+      state.settings.rules[k] = v;
+      rebuild();
+      await persist();
+      render();
+      if (k === "excludeSavings") {
+        toast(
+          v
+            ? "Épargne exclue : elle ne compte plus comme une dépense. Les soldes, eux, ne bougent pas."
+            : "Épargne incluse : elle est comptée comme une dépense."
+        );
+      }
+      return;
+    }
+
     const rule = t.closest("[data-rule]");
     if (rule) {
       const k = rule.dataset.rule;

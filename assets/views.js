@@ -211,6 +211,32 @@ const Views = (() => {
     }</div>`;
   }
 
+  /** Interrupteur des virements d'épargne, présent sur les quatre écrans de
+      données. La règle vit aussi dans les réglages, mais la décision de compter
+      ou non l'épargne comme une dépense se prend en regardant les chiffres,
+      pas dans un menu : l'arbitrage doit être à portée de pouce.
+
+      Deux positions explicites plutôt qu'une bascule : sur un simple bouton, on
+      ne sait jamais si l'étiquette décrit l'état courant ou ce qu'un appui
+      ferait. « Exclus / Inclus » côte à côte lève l'ambiguïté. */
+  function savingsToggle(state) {
+    const on = !!state.settings.rules.excludeSavings;
+    return `
+      <div class="rule-toggle">
+        <div class="head">
+          <span class="em" aria-hidden="true">🐖</span>
+          <span class="lbl">
+            <span class="k">Virements d'épargne</span>
+            <span class="d">${on ? "Écartés des dépenses et du budget" : "Comptés comme des dépenses"}</span>
+          </span>
+        </div>
+        <div class="seg" role="group" aria-label="Virements d'épargne dans les dépenses">
+          <button data-rule-set="excludeSavings" data-value="1" aria-pressed="${on}">Exclus</button>
+          <button data-rule-set="excludeSavings" data-value="0" aria-pressed="${!on}">Inclus</button>
+        </div>
+      </div>`;
+  }
+
   /* ---------- 1. Comptes ---------- */
 
   function comptes(state) {
@@ -246,6 +272,8 @@ const Views = (() => {
           ? ""
           : `<div class="banner"><span class="em">ℹ️</span><span>Aucun solde d'ouverture renseigné : ce montant est le cumul de toutes les opérations du classeur, pas le solde réel de tes comptes. Tu peux saisir les soldes de départ dans les réglages.</span></div>`
       }
+
+      ${savingsToggle(state)}
 
       <div class="card">
         <div class="card-head">
@@ -368,6 +396,8 @@ const Views = (() => {
           .join("")}
       </div>
 
+      ${savingsToggle(state)}
+
       <div class="stats">
         ${statTile("Entrées", Fmt.eur(m.revenus))}
         ${statTile("Sorties", Fmt.eur(m.depenses))}
@@ -449,6 +479,8 @@ const Views = (() => {
           </button>
         </div>
       </div>
+
+      ${savingsToggle(state)}
 
       <div class="card">
         <div class="card-head">
@@ -591,6 +623,8 @@ const Views = (() => {
           ${SIZES.map((p) => `<button class="chip" data-anasize="${p.id}" aria-pressed="${w.size.id === p.id}">${p.label}</button>`).join("")}
         </div>
       </div>
+
+      ${savingsToggle(state)}
 
       <div class="card balance">
         <div class="card-head">
