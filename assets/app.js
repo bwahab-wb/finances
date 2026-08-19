@@ -352,6 +352,13 @@
       return;
     }
 
+    if (t.closest("[data-catsheet]")) {
+      openSheet(Views.catSheet(state));
+      const champ = $("[data-catfilter]", sheet);
+      if (champ) champ.focus();
+      return;
+    }
+
     const c = t.closest("[data-cat]");
     if (c) {
       state.filters.category = c.dataset.cat;
@@ -490,7 +497,31 @@
     }, 220);
   });
 
+  // Recherche dans la feuille de catégories : on masque au lieu de reconstruire,
+  // pour ne pas perdre le focus du champ à chaque frappe.
+  sheet.addEventListener("input", (e) => {
+    const champ = e.target.closest("[data-catfilter]");
+    if (!champ) return;
+    const q = Data.norm(champ.value);
+    let visibles = 0;
+    for (const b of sheet.querySelectorAll(".catlist [data-cat]")) {
+      const ok = !q || Data.norm(b.textContent).includes(q);
+      b.hidden = !ok;
+      if (ok) visibles++;
+    }
+    const vide = $(".catlist-vide", sheet);
+    if (vide) vide.hidden = visibles > 0;
+  });
+
   sheet.addEventListener("click", async (e) => {
+    const cat = e.target.closest("[data-cat]");
+    if (cat) {
+      state.filters.category = cat.dataset.cat;
+      state.filters.limit = 50;
+      closeSheet();
+      render();
+      return;
+    }
     if (e.target.closest("[data-close]")) {
       closeSheet();
       return;

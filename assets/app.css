@@ -1052,6 +1052,40 @@ h3 {
   border-color: var(--accent);
 }
 
+/* La pastille qui ouvre la feuille de catégories : contour pointillé, pour
+   qu'elle se lise comme une porte et non comme un filtre de plus. */
+.chip.more {
+  background: none;
+  border-style: dashed;
+  color: var(--ink-3);
+}
+
+.chip.more:hover {
+  color: var(--ink-2);
+  border-color: var(--accent);
+}
+
+/* Liste de la feuille : les pastilles s'empilent et défilent, le reste de la
+   feuille (titre, recherche) ne bouge pas. */
+.catlist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.catlist [hidden] {
+  display: none;
+}
+
+.catlist-vide {
+  margin: 12px 2px 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
 .segmented {
   display: flex;
   background: var(--glass-inset);

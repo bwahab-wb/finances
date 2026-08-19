@@ -363,6 +363,64 @@ const Views = (() => {
     }
   }
 
+  /* ---------- Filtre de catégorie ---------- */
+
+  /** Nombre de catégories gardées en pastilles. Au-delà, la rangée mangeait
+      l'écran : avec une cinquantaine de catégories, le bloc de filtres montait
+      à 573 px et la première opération commençait sous la ligne de flottaison. */
+  const CAT_VISIBLES = 8;
+
+  /** Les plus utilisées d'abord, comptées sur TOUT l'historique et non sur la
+      période affichée : sinon les pastilles se réordonneraient à chaque
+      changement de période et on ne retrouverait jamais son geste. */
+  function catsFrequentes(state, cats) {
+    const usage = new Map();
+    for (const o of state.ops) usage.set(o.category, (usage.get(o.category) || 0) + 1);
+    return [...cats].sort((a, b) => (usage.get(b) || 0) - (usage.get(a) || 0)).slice(0, CAT_VISIBLES);
+  }
+
+  function catChips(state, cats) {
+    const f = state.filters;
+    const visibles = catsFrequentes(state, cats).sort((a, b) => a.localeCompare(b, "fr"));
+    // La catégorie active reste toujours visible, même hors du palmarès :
+    // un filtre qu'on ne voit plus est un filtre qu'on oublie d'enlever.
+    if (f.category !== "all" && !visibles.includes(f.category)) visibles.unshift(f.category);
+    const reste = cats.length - visibles.length;
+    return (
+      visibles
+        .map(
+          (c) =>
+            `<button class="chip" data-cat="${esc(c)}" aria-pressed="${f.category === c}">${catOf(state, c).icon} ${esc(c)}</button>`
+        )
+        .join("") +
+      (reste > 0
+        ? `<button class="chip more" data-catsheet aria-haspopup="dialog">+ ${Fmt.num(reste)} autres…</button>`
+        : "")
+    );
+  }
+
+  /** Contenu de la feuille de sélection : toutes les catégories, cherchables.
+      Au-delà d'une dizaine d'entrées, chercher bat parcourir. */
+  function catSheet(state) {
+    const cats = [...new Set(state.ops.map((o) => o.category))].sort((a, b) => a.localeCompare(b, "fr"));
+    return `
+      <h2>Filtrer par catégorie</h2>
+      <div class="search" style="margin:12px 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" placeholder="Chercher une catégorie" data-catfilter aria-label="Chercher une catégorie">
+      </div>
+      <div class="catlist">
+        <button class="chip" data-cat="all" aria-pressed="${state.filters.category === "all"}">Toutes catégories</button>
+        ${cats
+          .map(
+            (c) =>
+              `<button class="chip" data-cat="${esc(c)}" aria-pressed="${state.filters.category === c}">${catOf(state, c).icon} ${esc(c)}</button>`
+          )
+          .join("")}
+      </div>
+      <p class="catlist-vide" hidden>Aucune catégorie ne correspond.</p>`;
+  }
+
   /* ---------- 2. Opérations ---------- */
 
   function operations(state) {
@@ -397,12 +455,7 @@ const Views = (() => {
           .map((a) => `<button class="chip" data-acct="${esc(a.code)}" aria-pressed="${f.account === a.code}">${esc(a.name)}</button>`)
           .join("")}
         <button class="chip" data-cat="all" aria-pressed="${f.category === "all"}">Toutes catégories</button>
-        ${cats
-          .map(
-            (c) =>
-              `<button class="chip" data-cat="${esc(c)}" aria-pressed="${f.category === c}">${catOf(state, c).icon} ${esc(c)}</button>`
-          )
-          .join("")}
+        ${catChips(state, cats)}
       </div>
 
       ${savingsToggle(state)}
@@ -876,5 +929,5 @@ const Views = (() => {
       </p>`;
   }
 
-  return { anaWindow, comptes, mountComptes, operations, budget, mountBudget, analyse, mountAnalyse, reglages, opDetail, range, inRange, PERIODS };
+  return { anaWindow, comptes, mountComptes, operations, budget, mountBudget, analyse, mountAnalyse, reglages, opDetail, catSheet, range, inRange, PERIODS };
 })();
