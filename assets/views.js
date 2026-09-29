@@ -670,37 +670,47 @@ const Views = (() => {
     const famSlots = { Essentiel: "--s1", Plaisir: "--s2", Épargne: "--s3", Extra: "--s-rest" };
     const famItems = famOrder.filter((k) => fam.has(k)).map((k) => ({ label: k, value: fam.get(k), slot: famSlots[k] }));
 
-    // Sankey : revenus → familles → catégories. Les sept premières catégories
-    // gardent leur nom, les autres se replient en « Autres » pour rester lisibles.
+    // Sankey : revenus → familles → catégories, sans aucun croisement de rubans.
+    // Les catégories sont rangées famille par famille (chaque famille ne nourrit que
+    // son bloc) ; les moins importantes se replient en un « Autres » PAR famille,
+    // sinon un « Autres » commun à toutes les familles traverserait tout le graphique.
+    // Une seule source à gauche, pour la même raison : deux sources qui nourrissent
+    // les mêmes familles se croiseraient forcément.
     const flow = { nodes: [], links: [] };
     const spent = cats.reduce((s, c) => s + c.total, 0);
     if (spent > 0) {
-      const r = Math.min(m.revenus, spent) / spent;
       const topCats = new Set([...cats].sort((a, b) => b.total - a.total).slice(0, 7).map((c) => c.category));
-      flow.nodes.push({ id: "rev", label: "Revenus", value: Math.min(m.revenus, spent), slot: "--s3", col: 0 });
-      if (m.revenus < spent) flow.nodes.push({ id: "def", label: "Au-delà des revenus", value: spent - m.revenus, slot: "--s-rest", col: 0 });
-      if (m.revenus > spent) flow.nodes.push({ id: "left", label: "Non dépensé", value: m.revenus - spent, slot: "--s-rest", col: 1 });
-      if (m.revenus > spent) flow.nodes[0].value = m.revenus;
-      for (const k of famOrder.filter((x) => fam.has(x))) {
+      const deficit = m.revenus < spent;
+      flow.nodes.push({
+        id: "rev",
+        label: deficit ? "Dépensé" : "Revenus",
+        note: deficit ? `Revenus ${Fmt.eur(m.revenus)} + ${Fmt.eur(spent - m.revenus)} au-delà des revenus` : "",
+        value: Math.max(m.revenus, spent),
+        slot: "--s3",
+        col: 0,
+      });
+      const famList = famOrder.filter((x) => fam.has(x));
+      for (const k of famList) {
         flow.nodes.push({ id: "f:" + k, label: k, value: fam.get(k), slot: famSlots[k], col: 1 });
-        flow.links.push({ from: "rev", to: "f:" + k, value: fam.get(k) * r });
-        if (r < 1) flow.links.push({ from: "def", to: "f:" + k, value: fam.get(k) * (1 - r) });
+        flow.links.push({ from: "rev", to: "f:" + k, value: fam.get(k) });
       }
-      if (m.revenus > spent) flow.links.push({ from: "rev", to: "left", value: m.revenus - spent });
-      const others = new Map();
-      // Rangées par famille puis par montant : les rubans ne se croisent pas.
-      const famRank = (c) => famOrder.indexOf(Data.familyFor(c.category));
-      for (const c of [...cats].sort((a, b) => famRank(a) - famRank(b) || b.total - a.total)) {
-        const f = "f:" + Data.familyFor(c.category);
-        if (topCats.has(c.category)) {
+      if (!deficit && m.revenus > spent) {
+        flow.nodes.push({ id: "left", label: "Non dépensé", value: m.revenus - spent, slot: "--s-rest", col: 1 });
+        flow.links.push({ from: "rev", to: "left", value: m.revenus - spent });
+      }
+      for (const k of famList) {
+        const mine = cats.filter((c) => Data.familyFor(c.category) === k);
+        for (const c of mine.filter((c) => topCats.has(c.category))) {
           flow.nodes.push({ id: "c:" + c.category, label: c.category, value: c.total, slot: catOf(state, c.category).slot, col: 2 });
-          flow.links.push({ from: f, to: "c:" + c.category, value: c.total });
-        } else others.set(f, (others.get(f) || 0) + c.total);
-      }
-      if (others.size) {
-        const nOthers = cats.length - topCats.size;
-        flow.nodes.push({ id: "c:_autres", label: `Autres (${nOthers})`, value: [...others.values()].reduce((s, v) => s + v, 0), slot: "--s-rest", col: 2 });
-        for (const [f, v] of others) flow.links.push({ from: f, to: "c:_autres", value: v });
+          flow.links.push({ from: "f:" + k, to: "c:" + c.category, value: c.total });
+        }
+        const rest = mine.filter((c) => !topCats.has(c.category));
+        if (rest.length) {
+          const id = "c:_autres:" + k;
+          const v = rest.reduce((s, c) => s + c.total, 0);
+          flow.nodes.push({ id, label: `Autres (${rest.length})`, value: v, slot: "--s-rest", col: 2 });
+          flow.links.push({ from: "f:" + k, to: id, value: v });
+        }
       }
     }
 

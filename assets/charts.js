@@ -606,7 +606,7 @@ const Charts = (() => {
       let minY = top;
       for (const n of col) {
         const r = el("rect", { x: n.x, y: n.y, width: NW, height: n.h, rx: 2, fill: cssVar(n.slot) });
-        hoverable(r, r, () => `${escapeHtml(n.label)}<br><b>${Fmt.eur(n.value)}</b>${share(n.value)}`);
+        hoverable(r, r, () => `${escapeHtml(n.label)}<br><b>${Fmt.eur(n.value)}</b>${share(n.value)}${n.note ? "<br>" + escapeHtml(n.note) : ""}`);
         gNodes.appendChild(r);
 
         const cy = Math.min(bottom - LH, Math.max(minY, n.y + n.h / 2 - LH / 2));
