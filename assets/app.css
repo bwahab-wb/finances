@@ -1508,6 +1508,15 @@ h3 {
   font-weight: 620;
 }
 
+/* Étiquettes du Sankey : un liseré de la couleur de surface les garde lisibles
+   quand elles passent sur un ruban. */
+.chart .sankey-lbl {
+  paint-order: stroke;
+  stroke: var(--chart-surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
 .chart .mark-line {
   fill: none;
   stroke-width: 2;

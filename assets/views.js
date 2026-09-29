@@ -670,6 +670,40 @@ const Views = (() => {
     const famSlots = { Essentiel: "--s1", Plaisir: "--s2", Épargne: "--s3", Extra: "--s-rest" };
     const famItems = famOrder.filter((k) => fam.has(k)).map((k) => ({ label: k, value: fam.get(k), slot: famSlots[k] }));
 
+    // Sankey : revenus → familles → catégories. Les sept premières catégories
+    // gardent leur nom, les autres se replient en « Autres » pour rester lisibles.
+    const flow = { nodes: [], links: [] };
+    const spent = cats.reduce((s, c) => s + c.total, 0);
+    if (spent > 0) {
+      const r = Math.min(m.revenus, spent) / spent;
+      const topCats = new Set([...cats].sort((a, b) => b.total - a.total).slice(0, 7).map((c) => c.category));
+      flow.nodes.push({ id: "rev", label: "Revenus", value: Math.min(m.revenus, spent), slot: "--s3", col: 0 });
+      if (m.revenus < spent) flow.nodes.push({ id: "def", label: "Au-delà des revenus", value: spent - m.revenus, slot: "--s-rest", col: 0 });
+      if (m.revenus > spent) flow.nodes.push({ id: "left", label: "Non dépensé", value: m.revenus - spent, slot: "--s-rest", col: 1 });
+      if (m.revenus > spent) flow.nodes[0].value = m.revenus;
+      for (const k of famOrder.filter((x) => fam.has(x))) {
+        flow.nodes.push({ id: "f:" + k, label: k, value: fam.get(k), slot: famSlots[k], col: 1 });
+        flow.links.push({ from: "rev", to: "f:" + k, value: fam.get(k) * r });
+        if (r < 1) flow.links.push({ from: "def", to: "f:" + k, value: fam.get(k) * (1 - r) });
+      }
+      if (m.revenus > spent) flow.links.push({ from: "rev", to: "left", value: m.revenus - spent });
+      const others = new Map();
+      // Rangées par famille puis par montant : les rubans ne se croisent pas.
+      const famRank = (c) => famOrder.indexOf(Data.familyFor(c.category));
+      for (const c of [...cats].sort((a, b) => famRank(a) - famRank(b) || b.total - a.total)) {
+        const f = "f:" + Data.familyFor(c.category);
+        if (topCats.has(c.category)) {
+          flow.nodes.push({ id: "c:" + c.category, label: c.category, value: c.total, slot: catOf(state, c.category).slot, col: 2 });
+          flow.links.push({ from: f, to: "c:" + c.category, value: c.total });
+        } else others.set(f, (others.get(f) || 0) + c.total);
+      }
+      if (others.size) {
+        const nOthers = cats.length - topCats.size;
+        flow.nodes.push({ id: "c:_autres", label: `Autres (${nOthers})`, value: [...others.values()].reduce((s, v) => s + v, 0), slot: "--s-rest", col: 2 });
+        for (const [f, v] of others) flow.links.push({ from: f, to: "c:_autres", value: v });
+      }
+    }
+
     return `
       <div class="period-card">
         <div class="period-nav">
@@ -728,6 +762,15 @@ const Views = (() => {
         })}
       </div>
 
+      ${
+        flow.links.length
+          ? `<div class="card">
+              <div class="card-head"><h2>Flux des dépenses</h2><span class="hint">${esc(w.label)}</span></div>
+              <div data-chart="sankey"></div>
+            </div>`
+          : ""
+      }
+
       <div class="card">
         <div class="card-head"><h2>Répartition des dépenses</h2></div>
         <div class="donut-wrap">
@@ -783,12 +826,15 @@ const Views = (() => {
         cum: cum.filter((_, i, a) => a.length < 400 || i % Math.ceil(a.length / 400) === 0),
         ranked: top.map((c) => ({ label: c.category, value: c.total, slot: catOf(state, c.category).slot })),
         famItems,
+        flow,
         depenses: m.depenses,
       })}</script>`;
   }
 
   function mountAnalyse(state, root) {
     const p = JSON.parse($('[data-payload="analyse"]', root).textContent);
+    const sk = $('[data-chart="sankey"]', root);
+    if (sk) Charts.sankey(sk, p.flow.nodes, p.flow.links, { total: Math.max(p.depenses, 1) });
     Charts.donut($('[data-chart="donut"]', root), p.slices);
     const mc = $('[data-chart="months"]', root);
     if (mc) Charts.monthlyColumns(mc, p.months);
