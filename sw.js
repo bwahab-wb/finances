@@ -6,7 +6,7 @@
    la purge de l'ancien : tant qu'il ne change pas, `activate` n'a rien à
    supprimer et l'ancienne version survit indéfiniment. */
 
-const VERSION = "mes-comptes-v12";
+const VERSION = "mes-comptes-v13";
 
 const SHELL = [
   "./",
@@ -14,6 +14,7 @@ const SHELL = [
   "./manifest.webmanifest",
   "./assets/app.css",
   "./assets/data.js",
+  "./assets/onedrive.js",
   "./assets/charts.js",
   "./assets/views.js",
   "./assets/app.js",

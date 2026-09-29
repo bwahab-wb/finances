@@ -828,6 +828,8 @@ const Views = (() => {
         <button class="btn ghost" style="margin-top:8px" data-demo>Charger le jeu de démonstration</button>
       </div>
 
+      ${onedrive()}
+
       <div class="card flush">
         <div class="field"><div><div class="k">Fichier</div><div class="d">${esc(raw.fileName || "—")}</div></div></div>
         <div class="field"><div><div class="k">Opérations</div><div class="d">${span}</div></div><div class="k">${Fmt.num(nOps)}</div></div>
@@ -929,5 +931,37 @@ const Views = (() => {
       </p>`;
   }
 
-  return { anaWindow, comptes, mountComptes, operations, budget, mountBudget, analyse, mountAnalyse, reglages, opDetail, catSheet, range, inRange, PERIODS };
+  /** Carte de connexion OneDrive : réglages et écran d'accueil. */
+  function onedrive() {
+    const c = OneDrive.get();
+    const on = OneDrive.connected();
+    const last = c.lastSync ? `${Fmt.dayLong(c.lastSync)} ${new Date(c.lastSync).toTimeString().slice(0, 5)}` : "jamais";
+    return `
+      <div class="card">
+        <div class="card-head"><h2>OneDrive</h2></div>
+        <p style="margin:0 0 10px;font-size:13px;color:var(--ink-2);line-height:1.55">
+          ${
+            on
+              ? `Connecté en lecture seule. Le classeur est relu à chaque ouverture de l'application. Dernière synchro : <b>${esc(last)}</b>.`
+              : `Le classeur est lu directement dans ton OneDrive, sans jamais être modifié. Il faut d'abord déclarer l'application chez Microsoft (voir le README).`
+          }
+        </p>
+        <div class="field">
+          <div><div class="k">Client ID</div><div class="d">Identifiant d'application Microsoft</div></div>
+          <input type="text" value="${esc(c.clientId || "")}" data-od-client autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Client ID OneDrive">
+        </div>
+        <div class="field">
+          <div><div class="k">Chemin</div><div class="d">Depuis la racine de OneDrive</div></div>
+          <input type="text" value="${esc(c.path || "")}" placeholder="Documents/OperationsOfficiel.xlsm" data-od-path autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Chemin du classeur dans OneDrive">
+        </div>
+        ${
+          on
+            ? `<button class="btn" style="margin-top:10px" data-od-sync>Synchroniser maintenant</button>
+               <button class="btn ghost" style="margin-top:8px" data-od-disconnect>Déconnecter OneDrive</button>`
+            : `<button class="btn" style="margin-top:10px" data-od-connect>Se connecter à OneDrive</button>`
+        }
+      </div>`;
+  }
+
+  return { onedrive, anaWindow, comptes, mountComptes, operations, budget, mountBudget, analyse, mountAnalyse, reglages, opDetail, catSheet, range, inRange, PERIODS };
 })();

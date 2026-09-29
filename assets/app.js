@@ -151,6 +151,8 @@
         <button class="btn ghost" style="margin-top:8px" data-demo>Explorer avec des données de démonstration</button>
       </div>
 
+      ${Views.onedrive()}
+
       <div class="card">
         <div class="card-head"><h2>Ce que l'application attend</h2></div>
         <p style="margin:0 0 10px;font-size:13.5px;color:var(--ink-2);line-height:1.55">
@@ -225,27 +227,54 @@
     if (!file) return;
     toast("Lecture du classeur…");
     try {
-      const buf = await file.arrayBuffer();
-      const parsed = Data.parseWorkbook(new Uint8Array(buf), file.name);
-      state.raw = parsed;
-      state.filters.budgetMonth = null;
-      state.filters.anaAnchor = null;
-      rebuild();
-      await persist();
-      state.screen = "comptes";
-      render();
-      toast(`${Fmt.num(parsed.operations.length)} opérations importées.`);
+      await importBuffer(new Uint8Array(await file.arrayBuffer()), file.name);
     } catch (err) {
-      console.error(err);
-      openSheet(`
-        <h2>Import impossible</h2>
-        <p style="font-size:14px;color:var(--ink-2);line-height:1.55">${Charts.escapeHtml(err.message || String(err))}</p>
-        <p style="font-size:13px;color:var(--ink-3);line-height:1.55">
-          Vérifie qu'une feuille contient bien une ligne d'en-tête avec au minimum <b>Date</b> et <b>Montant</b>.
-          Les en-têtes sont reconnus sans tenir compte des accents ni de la casse.
-        </p>
-        <button class="btn ghost" style="margin-top:12px" data-close>Fermer</button>`);
+      importError(err);
     }
+  }
+
+  async function importBuffer(buf, name, { keepScreen = false, verb = "importées" } = {}) {
+    const parsed = Data.parseWorkbook(buf, name);
+    state.raw = parsed;
+    state.filters.budgetMonth = null;
+    state.filters.anaAnchor = null;
+    rebuild();
+    await persist();
+    if (!keepScreen) state.screen = "comptes";
+    render();
+    toast(`${Fmt.num(parsed.operations.length)} opérations ${verb}.`);
+  }
+
+  /** Relit le classeur depuis OneDrive. `silent` : au démarrage, un échec ne
+      doit pas masquer les données déjà présentes sur l'appareil. */
+  let syncing = false;
+  async function syncOneDrive({ silent = false } = {}) {
+    if (syncing || !OneDrive.ready()) return;
+    syncing = true;
+    if (!silent) toast("Synchronisation OneDrive…");
+    try {
+      const f = await OneDrive.fetchWorkbook();
+      await importBuffer(f.buffer, f.name, { keepScreen: !!state.raw && state.screen !== "comptes", verb: "synchronisées" });
+    } catch (err) {
+      console.warn("Synchronisation OneDrive :", err);
+      if (silent) toast("OneDrive : " + (err.message || err));
+      else importError(err);
+      if (state.raw || !OneDrive.connected()) render();
+    } finally {
+      syncing = false;
+    }
+  }
+
+  function importError(err) {
+    console.error(err);
+    openSheet(`
+      <h2>Import impossible</h2>
+      <p style="font-size:14px;color:var(--ink-2);line-height:1.55">${Charts.escapeHtml(err.message || String(err))}</p>
+      <p style="font-size:13px;color:var(--ink-3);line-height:1.55">
+        Vérifie qu'une feuille contient bien une ligne d'en-tête avec au minimum <b>Date</b> et <b>Montant</b>.
+        Les en-têtes sont reconnus sans tenir compte des accents ni de la casse.
+      </p>
+      <button class="btn ghost" style="margin-top:12px" data-close>Fermer</button>`);
   }
 
   async function loadDemo() {
@@ -431,6 +460,27 @@
       return;
     }
 
+    if (t.closest("[data-od-connect]")) {
+      try {
+        await saveOneDriveFields();
+        await OneDrive.login();
+      } catch (err) {
+        toast(err.message || String(err));
+      }
+      return;
+    }
+    if (t.closest("[data-od-sync]")) {
+      await saveOneDriveFields();
+      await syncOneDrive();
+      return;
+    }
+    if (t.closest("[data-od-disconnect]")) {
+      await OneDrive.disconnect();
+      render();
+      toast("OneDrive déconnecté. Les données restent sur l'appareil.");
+      return;
+    }
+
     if (t.closest("[data-demo]")) {
       await loadDemo();
       return;
@@ -449,7 +499,21 @@
     }
   });
 
+  async function saveOneDriveFields() {
+    const id = $("[data-od-client]", view);
+    const path = $("[data-od-path]", view);
+    const patch = {};
+    if (id) patch.clientId = id.value.trim();
+    if (path) patch.path = path.value.trim();
+    await OneDrive.update(patch);
+  }
+
   view.addEventListener("change", async (e) => {
+    if (e.target.closest("[data-od-client], [data-od-path]")) {
+      await saveOneDriveFields();
+      return;
+    }
+
     const f = e.target.closest("[data-file]");
     if (f && f.files && f.files[0]) {
       await importFile(f.files[0]);
@@ -593,6 +657,21 @@
     applyTheme();
     rebuild();
     render();
+
+    // OneDrive : retour de la page de connexion Microsoft, puis synchro au lancement.
+    try {
+      await OneDrive.init();
+      const justConnected = await OneDrive.handleRedirect();
+      if (justConnected) {
+        if (state.raw) state.screen = "reglages";
+        render();
+        toast("OneDrive connecté.");
+      }
+      if (OneDrive.ready()) syncOneDrive({ silent: !justConnected && !!state.raw });
+    } catch (err) {
+      console.warn("OneDrive :", err);
+      toast("OneDrive : " + (err.message || err));
+    }
 
     if ("serviceWorker" in navigator && window.isSecureContext) {
       // Quand un nouveau service worker prend la main, la page tourne encore sur

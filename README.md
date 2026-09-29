@@ -138,11 +138,37 @@ bien qu'inutilisé : c'est la partie la plus longue à réécrire. La détection
 récurrentes, elle, a été retirée de `data.js` avec le reste — elle se récupère dans
 l'historique Git au commit qui a supprimé le concept.
 
+## Synchroniser depuis OneDrive
+
+Au lieu d'importer le classeur à la main, l'application peut le **relire dans ton OneDrive à
+chaque ouverture**. Connexion OAuth 2.0 (code + PKCE) directement depuis le navigateur, lecture
+seule (`Files.Read`), via Microsoft Graph. Pas de serveur, pas de secret dans le code.
+
+**Une fois pour toutes, chez Microsoft** (gratuit) :
+
+1. [portal.azure.com](https://portal.azure.com) → *Microsoft Entra ID* → *Inscriptions d'applications* → *Nouvelle inscription*.
+2. Types de comptes : **« Comptes dans un annuaire organisationnel et comptes Microsoft personnels »**.
+3. URI de redirection : plateforme **Application monopage (SPA)**, valeur `https://bwahab-wb.github.io/finances/`
+   (exactement cette URL, avec la barre finale).
+4. *Autorisations de l'API* → Microsoft Graph → déléguées : `Files.Read` et `offline_access`.
+5. Copier l'**ID d'application (client)**.
+
+**Dans l'application** : Réglages (ou écran d'accueil) → carte *OneDrive* → coller le client ID, saisir le
+chemin depuis la racine de OneDrive (ex. `Documents/OperationsOfficiel.xlsm`) → *Se connecter*.
+
+Limites à connaître :
+
+- Pour une application web, Microsoft fait expirer le jeton de renouvellement au bout de **24 h** :
+  après une journée sans ouvrir l'application, il faut se reconnecter (un appui).
+- Il faut du réseau pour synchroniser ; hors ligne, ce sont les dernières données synchronisées qui s'affichent.
+- Les jetons sont conservés en IndexedDB sur l'appareil, comme les données.
+
 ## Confidentialité
 
 Le fichier est lu **par le navigateur, sur l'appareil**, via SheetJS. Les données normalisées
-sont conservées en **IndexedDB** locale. Aucune requête réseau ne transporte de donnée
-financière, il n'y a ni compte ni serveur. Le classeur d'origine n'est **jamais modifié** :
+sont conservées en **IndexedDB** locale. Aucune donnée financière n'est **envoyée** nulle part,
+il n'y a ni compte ni serveur. Seule la synchronisation OneDrive, si tu l'actives, fait des
+requêtes : elle **télécharge** le classeur depuis Microsoft, sans rien y écrire. Le classeur d'origine n'est **jamais modifié** :
 l'application ne fait que le lire. Pour corriger une ligne, on la corrige dans Excel et on
 réimporte.
 
@@ -219,6 +245,7 @@ elle n'a ni service worker ni cache, et montre donc l'état réel du déploiemen
 ├── assets/
 │   ├── app.css                design system (tokens, composants, thème clair/sombre)
 │   ├── data.js                lecture Excel, normalisation, mesures, règles, IndexedDB
+│   ├── onedrive.js            connexion OneDrive (OAuth PKCE + Microsoft Graph)
 │   ├── charts.js              graphiques SVG + formatage FR
 │   ├── views.js               les cinq écrans
 │   └── app.js                 état, navigation, événements, import, persistance
