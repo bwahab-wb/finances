@@ -513,9 +513,119 @@ const Charts = (() => {
     svg.appendChild(b);
   }
 
+  /* ---------- 7. Sankey — d'où vient l'argent, où il va ---------- */
+
+  /**
+   * nodes : [{ id, label, value, slot, col }]   col = 0, 1, 2 (de gauche à droite)
+   * links : [{ from, to, value }]
+   * Chaque ruban prend la teinte de sa destination, à faible opacité : la
+   * couleur suit l'entité (la famille, la catégorie), jamais le rang.
+   * Tous les nœuds sont étiquetés en direct — l'identité ne repose pas sur la couleur.
+   */
+  function sankey(container, nodes, links, { height = 380, total = 0 } = {}) {
+    const { svg, w } = mount(container, height);
+    if (!nodes.length || !links.length) return;
+
+    const NW = 10; // largeur des nœuds
+    const PAD = 6; // vide entre deux nœuds d'une même colonne
+    const top = 6,
+      bottom = height - 6;
+    const labelW = Math.max(84, Math.min(120, w * 0.3));
+    const xs = [0, Math.round((w - labelW - NW) * 0.42), w - labelW - NW];
+
+    const byId = new Map(nodes.map((n) => [n.id, { ...n, out: [], inn: [] }]));
+    const ls = links
+      .filter((l) => l.value > 0 && byId.has(l.from) && byId.has(l.to))
+      .map((l) => ({ ...l, s: byId.get(l.from), t: byId.get(l.to) }));
+    ls.forEach((l) => {
+      l.s.out.push(l);
+      l.t.inn.push(l);
+    });
+
+    // une seule échelle pour les trois colonnes : la hauteur d'un nœud vaut son montant
+    const cols = [0, 1, 2].map((c) => [...byId.values()].filter((n) => n.col === c));
+    const k = Math.min(
+      ...cols
+        .filter((c) => c.length)
+        .map((c) => (bottom - top - PAD * (c.length - 1)) / Math.max(1, c.reduce((s, n) => s + n.value, 0)))
+    );
+    cols.forEach((col) => {
+      const used = col.reduce((s, n) => s + Math.max(3, n.value * k), 0) + PAD * (col.length - 1);
+      let y = top + (bottom - top - used) / 2;
+      for (const n of col) {
+        n.h = Math.max(3, n.value * k);
+        n.y = y;
+        n.x = xs[n.col];
+        y += n.h + PAD;
+      }
+    });
+
+    // les rubans sortent et entrent dans l'ordre vertical de l'autre extrémité : pas de croisement inutile
+    for (const n of byId.values()) {
+      n.out.sort((a, b) => a.t.y - b.t.y);
+      n.inn.sort((a, b) => a.s.y - b.s.y);
+      let yo = n.y,
+        yi = n.y;
+      for (const l of n.out) {
+        l.w = (l.value / n.value) * n.h;
+        l.y0 = yo;
+        yo += l.w;
+      }
+      for (const l of n.inn) {
+        l.w = (l.value / n.value) * n.h;
+        l.y1 = yi;
+        yi += l.w;
+      }
+    }
+
+    const gLinks = el("g");
+    const gNodes = el("g");
+    svg.appendChild(gLinks);
+    svg.appendChild(gNodes);
+
+    const share = (v) => (total ? ` · ${Fmt.pct(v / total)}` : "");
+
+    for (const l of ls) {
+      const x0 = l.s.x + NW,
+        x1 = l.t.x,
+        xm = (x0 + x1) / 2;
+      const hh = Math.max(1, l.w);
+      const y0 = l.y0,
+        y1 = l.t.inn.length && l.y1 != null ? l.y1 : l.t.y;
+      const d = `M${x0},${y0} C${xm},${y0} ${xm},${y1} ${x1},${y1} L${x1},${y1 + hh} C${xm},${y1 + hh} ${xm},${y0 + hh} ${x0},${y0 + hh} Z`;
+      const p = el("path", { d, fill: cssVar(l.t.slot), "fill-opacity": 0.32 });
+      hoverable(p, p, () => `${escapeHtml(l.s.label)} → ${escapeHtml(l.t.label)}<br><b>${Fmt.eur(l.value)}</b>${share(l.value)}`);
+      p.addEventListener("pointerenter", () => p.setAttribute("fill-opacity", 0.55));
+      p.addEventListener("pointerleave", () => p.setAttribute("fill-opacity", 0.32));
+      gLinks.appendChild(p);
+    }
+
+    // étiquettes : deux lignes, poussées vers le bas quand deux nœuds sont trop proches
+    const LH = 26;
+    for (const col of cols) {
+      let minY = top;
+      for (const n of col) {
+        const r = el("rect", { x: n.x, y: n.y, width: NW, height: n.h, rx: 2, fill: cssVar(n.slot) });
+        hoverable(r, r, () => `${escapeHtml(n.label)}<br><b>${Fmt.eur(n.value)}</b>${share(n.value)}${n.note ? "<br>" + escapeHtml(n.note) : ""}`);
+        gNodes.appendChild(r);
+
+        const cy = Math.min(bottom - LH, Math.max(minY, n.y + n.h / 2 - LH / 2));
+        minY = cy + LH;
+        const maxChars = Math.floor((labelW - 6) / 5.6);
+        const name = n.label.length > maxChars ? n.label.slice(0, maxChars - 1) + "…" : n.label;
+        const t1 = el("text", { x: n.x + NW + 5, y: cy + 10, class: "lbl-strong sankey-lbl" });
+        t1.textContent = name;
+        const t2 = el("text", { x: n.x + NW + 5, y: cy + 23, class: "sankey-lbl" });
+        t2.textContent = Fmt.eur(n.value);
+        gNodes.appendChild(t1);
+        gNodes.appendChild(t2);
+      }
+    }
+  }
+
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   }
 
-  return { donut, monthlyColumns, areaLine, rankedBars, variance, sparkline, forecastLine, cssVar, hideTip, escapeHtml };
+  return { donut, monthlyColumns, areaLine, rankedBars, variance, sparkline, forecastLine, sankey, cssVar, hideTip, escapeHtml };
 })();
